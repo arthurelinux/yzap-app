@@ -121,6 +121,85 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/AdminPlansPage.vue'),
     meta: { requiresAuth: true, admin: true },
   },
+  /* ---------- Grupo 6 — operacional (pedidos/produtos/estoque/financeiro) ---------- */
+  {
+    path: '/pedidos',
+    name: 'pedidos',
+    component: () => import('@/pages/OrdersPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/pedidos/:id',
+    name: 'pedido-detalhe',
+    component: () => import('@/pages/OrderDetailPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/categorias',
+    name: 'categorias',
+    component: () => import('@/pages/CategoriesPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/produtos',
+    name: 'produtos',
+    component: () => import('@/pages/ProductsPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/produtos/novo',
+    name: 'produto-novo',
+    component: () => import('@/pages/ProductFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/produtos/:id/editar',
+    name: 'produto-editar',
+    component: () => import('@/pages/ProductFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/produtos/:id',
+    name: 'produto-detalhe',
+    component: () => import('@/pages/ProductDetailPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/estoque',
+    name: 'estoque',
+    component: () => import('@/pages/StockPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/estoque/ajuste/:id',
+    name: 'estoque-ajuste',
+    component: () => import('@/pages/StockAdjustPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/financeiro',
+    name: 'financeiro',
+    component: () => import('@/pages/FinancePage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/financeiro/despesas/nova',
+    name: 'expense-nova',
+    component: () => import('@/pages/ExpenseFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/financeiro/despesas/:id',
+    name: 'expense-editar',
+    component: () => import('@/pages/ExpenseFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/caixa',
+    name: 'caixa',
+    component: () => import('@/pages/CashPage.vue'),
+    meta: { requiresAuth: true },
+  },
   /* ---------- Grupo 5 — billing (checkout MP é browser externo) ---------- */
   {
     path: '/assinatura',
