@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, reactive, ref, shallowRef } from 'vue'
 import { apiMessage } from './errors'
 
 /** ColeÃ§Ã£o paginada do contrato: `{"data": [...], "meta": {current_page, per_page, total, last_page?}}`. */
@@ -22,7 +22,7 @@ export interface ListEnvelope<T> {
  * 401/403 (use `routeApiError`).
  */
 export function useList<T>(fetchPage: (page: number) => Promise<ListEnvelope<T>>) {
-  // shallowRef + sempre atribuição de array novo (nunca push in-place).
+  // shallowRef + sempre atribuiï¿½ï¿½o de array novo (nunca push in-place).
   const items = shallowRef<T[]>([])
   const total = ref(0)
   const page = ref(1)
@@ -66,5 +66,6 @@ export function useList<T>(fetchPage: (page: number) => Promise<ListEnvelope<T>>
     }
   }
 
-  return { items, total, page, busy, loadingMore, error, hasMore, refresh, loadMore }
+  // reactive: refs aninhados fazem unwrap no template (list.items sem .value).
+  return reactive({ items, total, page, busy, loadingMore, error, hasMore, refresh, loadMore })
 }

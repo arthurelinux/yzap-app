@@ -65,6 +65,31 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/TeamPage.vue'),
     meta: { requiresAuth: true },
   },
+  /* ---------- Grupo 3 — clientes ---------- */
+  {
+    path: '/clientes',
+    name: 'clientes',
+    component: () => import('@/pages/CustomersPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/clientes/novo',
+    name: 'cliente-novo',
+    component: () => import('@/pages/CustomerFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/clientes/:id/editar',
+    name: 'cliente-editar',
+    component: () => import('@/pages/CustomerFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/clientes/:id',
+    name: 'cliente-detalhe',
+    component: () => import('@/pages/CustomerDetailPage.vue'),
+    meta: { requiresAuth: true },
+  },
 ]
 
 const router = createRouter({
