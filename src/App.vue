@@ -1,53 +1,50 @@
 <template>
-  <!-- Shell fiel ao gabarito `preview/ionic.blade.php` (reescrito como componentes
-       Vue/Ionic reais): ion-split-pane com menu lateral (232px desktop, drawer no mobile),
-       dropdowns de perfil via ion-popover e tab-bar mobile. -->
+  <!-- Shell fiel ao gabarito `preview/ionic.blade.php` (repo Laravel irmão):
+       ion-split-pane com menu de 232px no desktop (quando ≥ lg), drawer no
+       mobile, itens numa linha (nowrap/ellipsis), seções MINHA LOJA/CONTA/
+       ADMIN e tab-bar mobile. Itens sem permissão SOME (igual ao painel);
+       nenhum item é "em breve" — todos são features reais da API. -->
   <ion-app>
     <ion-split-pane content-id="main-content" when="lg">
       <ion-menu content-id="main-content" v-if="session.isAuthenticated">
         <div class="yz-logo"><img src="@/assets/horizontal.png" alt="YZap" /></div>
         <ion-content>
-          <div class="menu-sec">MINHA LOJA</div>
-          <ion-item button router-link="/inicio" router-direction="root" class="menu-item" lines="none">
-            <ion-icon slot="start" name="home-outline"></ion-icon>
-            <ion-label>Visão geral</ion-label>
-          </ion-item>
-          <ion-item
-            v-for="item in soonItems"
-            :key="item.label"
-            button
-            router-link="/em-breve"
-            class="menu-item"
-            lines="none"
-          >
-            <ion-icon slot="start" :name="item.icon"></ion-icon>
-            <ion-label>{{ item.label }}</ion-label>
-            <ion-badge slot="end" color="medium">em breve</ion-badge>
-          </ion-item>
-          <div class="menu-sec">CONTA</div>
-          <ion-item button lines="none" class="menu-item" @click="onLogout">
-            <ion-icon slot="start" name="log-out-outline"></ion-icon>
-            <ion-label>Sair</ion-label>
-          </ion-item>
+          <template v-for="sec in sections" :key="sec.title">
+            <template v-if="sec.items.length">
+              <div class="menu-sec">{{ sec.title }}</div>
+              <div
+                v-for="item in sec.items"
+                :key="item.label"
+                class="menu-item"
+                :class="{ active: isActive(item) }"
+                @click="go(item)"
+              >
+                <ion-icon :name="item.icon"></ion-icon>
+                <span class="menu-label">{{ item.label }}</span>
+              </div>
+            </template>
+          </template>
         </ion-content>
       </ion-menu>
 
       <div class="ion-page" id="main-content">
         <ion-router-outlet></ion-router-outlet>
-        <ion-tab-bar slot="bottom" class="mobile-tabs" v-if="session.isAuthenticated">
-          <ion-tab-button tab="inicio" href="/inicio">
-            <ion-icon name="home-outline"></ion-icon>
-            <ion-label>Início</ion-label>
+        <ion-tab-bar
+          slot="bottom"
+          class="mobile-tabs"
+          color="light"
+          v-if="session.isAuthenticated"
+        >
+          <ion-tab-button
+            v-for="tab in tabs"
+            :key="tab.path"
+            :tab="tab.label"
+            @click="goTab(tab.path)"
+          >
+            <ion-icon :name="tab.icon"></ion-icon>
+            <ion-label>{{ tab.label }}</ion-label>
           </ion-tab-button>
-          <ion-tab-button tab="pedidos" href="/em-breve">
-            <ion-icon name="receipt-outline"></ion-icon>
-            <ion-label>Pedidos</ion-label>
-          </ion-tab-button>
-          <ion-tab-button tab="produtos" href="/em-breve">
-            <ion-icon name="cube-outline"></ion-icon>
-            <ion-label>Produtos</ion-label>
-          </ion-tab-button>
-          <ion-tab-button tab="mais" href="/em-breve">
+          <ion-tab-button tab="mais" @click="openMenu">
             <ion-icon name="menu-outline"></ion-icon>
             <ion-label>Mais</ion-label>
           </ion-tab-button>
@@ -58,88 +55,122 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   IonApp,
-  IonBadge,
   IonContent,
   IonIcon,
-  IonItem,
-  IonLabel,
   IonMenu,
   IonRouterOutlet,
   IonSplitPane,
   IonTabBar,
   IonTabButton,
+  menuController,
 } from '@ionic/vue'
-import { useRouter } from 'vue-router'
+import { Browser } from '@capacitor/browser'
 import { useSessionStore } from '@/stores/session'
+import { useShopStore } from '@/stores/shop'
+
+interface MenuEntry {
+  label: string
+  icon: string
+  path?: string
+  action?: 'open-store'
+}
+interface MenuSection {
+  title: string
+  items: MenuEntry[]
+}
 
 const session = useSessionStore()
+const shop = useShopStore()
 const router = useRouter()
+const route = useRoute()
 
-/** Mesmos 17 itens do painel (gabarito); só "Visão geral" é funcional nesta fase. */
-const soonItems = [
-  { label: 'Configurar loja', icon: 'storefront-outline' },
-  { label: 'Categorias', icon: 'grid-outline' },
-  { label: 'Produtos', icon: 'cube-outline' },
-  { label: 'Pedidos', icon: 'receipt-outline' },
-  { label: 'Clientes', icon: 'people-outline' },
-  { label: 'Financeiro', icon: 'wallet-outline' },
-  { label: 'Caixa', icon: 'lock-closed-outline' },
-  { label: 'Estoque', icon: 'cube-outline' },
-  { label: 'Notificações', icon: 'notifications-outline' },
-  { label: 'Abrir minha loja', icon: 'open-outline' },
-  { label: 'Assinatura', icon: 'card-outline' },
-  { label: 'Programa de afiliados', icon: 'share-social-outline' },
-  { label: 'Usuários', icon: 'person-add-outline' },
-  { label: 'Mercado Pago', icon: 'cash-outline' },
-  { label: 'Como criar sua loja', icon: 'help-circle-outline' },
-  { label: 'WhatsApp e API', icon: 'logo-whatsapp' },
-]
+/** Permissões vindas do GET /store (contrato § grupo 2). */
+const perms = computed(() => new Set(shop.store?.permissions ?? []))
+function can(permission: string): boolean {
+  return perms.value.has(permission)
+}
 
-async function onLogout() {
-  await session.logout()
-  await router.replace({ name: 'login' })
-}
-</script>
-
-<style>
-@import '@/theme/tokens.css';
-
-ion-split-pane {
-  --side-width: 232px;
-  --side-min-width: 232px;
-  --side-max-width: 232px;
-}
-.yz-logo {
-  padding: 14px 18px 6px;
-}
-.yz-logo img {
-  height: 30px;
-  width: auto;
-  display: block;
-}
-.menu-sec {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #9aa3b2;
-  padding: 14px 22px 4px;
-}
-.menu-item {
-  --border-radius: 10px;
-  margin: 1px 10px;
-  font-weight: 600;
-}
-ion-tab-bar.mobile-tabs {
-  display: none;
-}
-@media (max-width: 991px) {
-  ion-tab-bar.mobile-tabs {
-    display: flex;
+const sections = computed<MenuSection[]>(() => {
+  const loja: MenuEntry[] = [{ label: 'Visão geral', icon: 'home-outline', path: '/inicio' }]
+  loja.push({ label: 'Configurar loja', icon: 'storefront-outline', path: '/configurar-loja' })
+  if (can('products')) {
+    loja.push({ label: 'Categorias', icon: 'grid-outline', path: '/categorias' })
+    loja.push({ label: 'Produtos', icon: 'cube-outline', path: '/produtos' })
   }
+  if (can('orders')) loja.push({ label: 'Pedidos', icon: 'receipt-outline', path: '/pedidos' })
+  if (can('customers')) loja.push({ label: 'Clientes', icon: 'people-outline', path: '/clientes' })
+  if (can('finance')) {
+    loja.push({ label: 'Financeiro', icon: 'wallet-outline', path: '/financeiro' })
+    loja.push({ label: 'Caixa', icon: 'lock-closed-outline', path: '/caixa' })
+  }
+  if (can('stock')) loja.push({ label: 'Estoque', icon: 'layers-outline', path: '/estoque' })
+  if (shop.store?.public_url) {
+    loja.push({ label: 'Abrir minha loja', icon: 'open-outline', action: 'open-store' })
+  }
+
+  const conta: MenuEntry[] = [
+    { label: 'Assinatura', icon: 'card-outline', path: '/assinatura' },
+  ]
+  // Equipe: só o titular gerencia (mesma regra do painel; contrato § grupo 2).
+  if (shop.store?.is_owner) {
+    conta.push({ label: 'Usuários', icon: 'person-add-outline', path: '/equipe' })
+  }
+
+  const admin: MenuEntry[] = session.isAdmin
+    ? [
+        { label: 'Lojas', icon: 'storefront-outline', path: '/admin/lojas' },
+        { label: 'Usuários', icon: 'people-outline', path: '/admin/usuarios' },
+        { label: 'Planos', icon: 'diamond-outline', path: '/admin/planos' },
+      ]
+    : []
+
+  const out: MenuSection[] = [
+    { title: 'MINHA LOJA', items: loja },
+    { title: 'CONTA', items: conta },
+  ]
+  if (admin.length) out.push({ title: 'ADMIN', items: admin })
+  return out
+})
+
+/** Tabs de nível 1 (mesma ordem do spike): Início, Pedidos, Produtos, Mais. */
+const tabs = computed(() => {
+  const list = [{ label: 'Início', icon: 'home-outline', path: '/inicio' }]
+  if (can('orders')) list.push({ label: 'Pedidos', icon: 'receipt-outline', path: '/pedidos' })
+  if (can('products')) list.push({ label: 'Produtos', icon: 'cube-outline', path: '/produtos' })
+  return list
+})
+
+function isActive(item: MenuEntry): boolean {
+  if (!item.path) return false
+  if (item.path === '/inicio') return route.path === '/inicio' || route.path === '/'
+  return route.path === item.path || route.path.startsWith(`${item.path}/`)
 }
-html.ion-palette-dark .yz-logo img {
-  filter: brightness(0) invert(1);
+
+async function go(item: MenuEntry) {
+  if (item.action === 'open-store') {
+    const url = shop.store?.public_url
+    if (url) await Browser.open({ url })
+    return
+  }
+  if (item.path) await router.push(item.path)
 }
-</style>
+
+async function goTab(path: string) {
+  if (route.path !== path) await router.push(path)
+}
+
+async function openMenu() {
+  await menuController.open()
+}
+
+onMounted(() => {
+  // Garante permissões do menu mesmo com deep-link sem passar pelo dashboard.
+  if (session.isAuthenticated && !shop.store) {
+    void shop.load().catch(() => undefined)
+  }
+})
+</script>
