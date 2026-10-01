@@ -1,0 +1,37 @@
+{
+  "name": "yzap-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "App do lojista YZap — gestão da loja pelo celular (Ionic + Vue + Capacitor). Consome a API mobile do repo Laravel irmão (yzap).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:doctor": "cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/app": "8.1.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/status-bar": "8.0.3",
+    "@codetrix-studio/capacitor-google-auth": "3.3.6",
+    "@ionic/vue": "9.0.6",
+    "@ionic/vue-router": "9.0.6",
+    "capacitor-secure-storage-plugin": "0.13.0",
+    "ionicons": "8.1.0",
+    "pinia": "4.0.3",
+    "vue": "3.5.43",
+    "vue-router": "5.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@vitejs/plugin-vue": "6.0.9",
+    "typescript": "7.0.2",
+    "vite": "8.3.2",
+    "vue-tsc": "3.3.11"
+  }
+}

@@ -1,0 +1,40 @@
+/* Tokens YZap — origem: gabarito `resources/views/preview/ionic.blade.php`
+ * do repo Laravel irmão + seção 4 do agente mobile-front.
+ * Fonte: Manrope 400–800. Respeitar `accent_color` por loja (aplicado em
+ * runtime via `--yz-accent` quando a loja define cor própria). */
+:root {
+  --yz-primary: #087f6f;
+  --yz-primary-dark: #075e54;
+  --yz-ink: #10221f;
+  --yz-muted: #58706b;
+  --yz-mint: #dcf8ef;
+  --yz-mist: #dbe9e5;
+  --yz-bg: #f7fbfa;
+
+  --ion-color-primary: #087f6f;
+  --ion-color-primary-shade: #075e54;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  --ion-background-color: #f7fbfa;
+  --ion-card-background: #ffffff;
+  --ion-text-color: #10221f;
+
+  --yz-radius-sm: 10px;
+  --yz-radius-md: 13px;
+  --yz-radius-lg: 18px;
+  --yz-radius-pill: 99px;
+
+  /* Cor de destaque da loja (GET /store → accent_color). Sobrescrita em runtime. */
+  --yz-accent: var(--yz-primary);
+}
+
+html.ion-palette-dark {
+  --ion-background-color: #10221f;
+  --ion-card-background: #1a2e2a;
+  --ion-text-color: #f7fbfa;
+}
+
+/* Menu lateral: 232px no desktop (ion-split-pane), drawer no mobile. */
+yz-menu {
+  --side-width: 232px;
+}
