@@ -90,6 +90,37 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/CustomerDetailPage.vue'),
     meta: { requiresAuth: true },
   },
+  /* ---------- Grupo 4 — admin (somente ability `mobile:admin`) ---------- */
+  {
+    path: '/admin/lojas',
+    name: 'admin-lojas',
+    component: () => import('@/pages/AdminStoresPage.vue'),
+    meta: { requiresAuth: true, admin: true },
+  },
+  {
+    path: '/admin/lojas/:id',
+    name: 'admin-loja',
+    component: () => import('@/pages/AdminStoreDetailPage.vue'),
+    meta: { requiresAuth: true, admin: true },
+  },
+  {
+    path: '/admin/usuarios',
+    name: 'admin-usuarios',
+    component: () => import('@/pages/AdminUsersPage.vue'),
+    meta: { requiresAuth: true, admin: true },
+  },
+  {
+    path: '/admin/usuarios/:id',
+    name: 'admin-usuario',
+    component: () => import('@/pages/AdminUserDetailPage.vue'),
+    meta: { requiresAuth: true, admin: true },
+  },
+  {
+    path: '/admin/planos',
+    name: 'admin-planos',
+    component: () => import('@/pages/AdminPlansPage.vue'),
+    meta: { requiresAuth: true, admin: true },
+  },
   /* ---------- Grupo 5 — billing (checkout MP é browser externo) ---------- */
   {
     path: '/assinatura',
