@@ -96,7 +96,10 @@ function can(permission: string): boolean {
 
 const sections = computed<MenuSection[]>(() => {
   const loja: MenuEntry[] = [{ label: 'Visão geral', icon: 'home-outline', path: '/inicio' }]
-  loja.push({ label: 'Configurar loja', icon: 'storefront-outline', path: '/configurar-loja' })
+  // Configurações exige permissão `store_theme` (igual ao painel).
+  if (can('store_theme')) {
+    loja.push({ label: 'Configurar loja', icon: 'storefront-outline', path: '/configurar-loja' })
+  }
   if (can('products')) {
     loja.push({ label: 'Categorias', icon: 'grid-outline', path: '/categorias' })
     loja.push({ label: 'Produtos', icon: 'cube-outline', path: '/produtos' })

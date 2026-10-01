@@ -91,7 +91,12 @@
                 >
                   <ion-icon slot="start" name="receipt-outline"></ion-icon>Gerenciar pedidos
                 </ion-button>
-                <ion-button fill="outline" color="warning" router-link="/configurar-loja">
+                <ion-button
+                  v-if="can('store_theme')"
+                  fill="outline"
+                  color="warning"
+                  router-link="/configurar-loja"
+                >
                   <ion-icon slot="start" name="settings-outline"></ion-icon>Configurações
                 </ion-button>
               </div>

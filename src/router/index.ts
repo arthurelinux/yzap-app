@@ -52,6 +52,19 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/ForbiddenPage.vue'),
     meta: { requiresAuth: true },
   },
+  /* ---------- Grupo 2 — loja (configurações + equipe) ---------- */
+  {
+    path: '/configurar-loja',
+    name: 'configurar-loja',
+    component: () => import('@/pages/StoreSettingsPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/equipe',
+    name: 'equipe',
+    component: () => import('@/pages/TeamPage.vue'),
+    meta: { requiresAuth: true },
+  },
 ]
 
 const router = createRouter({

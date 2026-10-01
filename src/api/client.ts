@@ -29,8 +29,19 @@ export class ApiError extends Error {
     super(body?.message || `Erro ${status}`)
     this.status = status
     this.body = body
-    // O contrato garante `plan`+`feature` no 403 de plano.
-    this.isPlanBlock = status === 403 && Boolean(body?.plan || body?.feature)
+    // Backend distingue pelos `errors`:
+    // - middleware de plano (`mobile.plan:*`) → errors.plan
+    // - middleware de permissão (`mobile.store:*`) → errors.permission
+    // Fallback conforme contrato (plan+feature) quando não há errors.
+    this.isPlanBlock =
+      status === 403 &&
+      (Boolean(body?.errors?.plan) ||
+        (!body?.errors?.permission && Boolean(body?.plan || body?.feature)))
+  }
+
+  /** 403 de PERMISSÃO de loja (middleware `mobile.store:*`). */
+  get isPermissionDenied(): boolean {
+    return this.status === 403 && Boolean(this.body?.errors?.permission)
   }
 
   /** Erros de validação (422) por campo. */

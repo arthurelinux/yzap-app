@@ -27,6 +27,11 @@ export const useShopStore = defineStore('shop', () => {
 
   const accentColor = computed(() => store.value?.accent_color || '#087f6f')
 
+  /** Aplica uma loja atualizada vinda da API (após salvar configurações). */
+  function applyStore(data: StoreInfo) {
+    store.value = data
+  }
+
   async function load() {
     busy.value = true
     lastError.value = null
@@ -77,5 +82,6 @@ export const useShopStore = defineStore('shop', () => {
     permissionDenied,
     accentColor,
     load,
+    applyStore,
   }
 })
