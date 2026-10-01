@@ -15,6 +15,11 @@ const config: CapacitorConfig = {
     // Universal link principal: https://yzap.com.br/app/* (configurar assetlinks na web).
     // Scheme custom como fallback: yzap://billing/return
     App: {},
+    // Chave exigida pelos tipos do plugin; clientId é passado em runtime via
+    // GoogleAuth.initialize() (VITE_GOOGLE_CLIENT_ID), nunca hardcoded aqui.
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+    },
   },
 }
 

@@ -18,7 +18,7 @@
     "@capacitor/core": "8.5.2",
     "@capacitor/preferences": "8.0.1",
     "@capacitor/status-bar": "8.0.3",
-    "@codetrix-studio/capacitor-google-auth": "3.3.6",
+    "@codetrix-studio/capacitor-google-auth": "3.4.0-rc.4",
     "@ionic/vue": "9.0.6",
     "@ionic/vue-router": "9.0.6",
     "capacitor-secure-storage-plugin": "0.13.0",
@@ -30,7 +30,7 @@
   "devDependencies": {
     "@capacitor/cli": "8.5.2",
     "@vitejs/plugin-vue": "6.0.9",
-    "typescript": "7.0.2",
+    "typescript": "5.9.2",
     "vite": "8.3.2",
     "vue-tsc": "3.3.11"
   }
