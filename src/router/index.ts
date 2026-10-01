@@ -90,6 +90,16 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/CustomerDetailPage.vue'),
     meta: { requiresAuth: true },
   },
+  /* ---------- Grupo 5 — billing (checkout MP é browser externo) ---------- */
+  {
+    path: '/assinatura',
+    name: 'assinatura',
+    component: () => import('@/pages/SubscriptionPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  // Retorno do browser externo (deeplink/universal link): SÓ navega — o status
+  // real vem de GET /billing/status/{payment} e a ativação é do webhook.
+  { path: '/billing/return', redirect: '/assinatura' },
 ]
 
 const router = createRouter({

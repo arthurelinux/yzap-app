@@ -12,7 +12,7 @@
       <p v-if="feature" class="muted">Recurso: {{ feature }}</p>
       <p class="muted">Fale com o titular da loja para fazer upgrade e liberar este recurso.</p>
       <ion-button @click="goBack">Voltar ao início</ion-button>
-      <ion-button fill="outline" router-link="/renovar">Ver assinatura</ion-button>
+      <ion-button fill="outline" router-link="/assinatura">Ver planos e assinar</ion-button>
     </ion-content>
   </ion-page>
 </template>
