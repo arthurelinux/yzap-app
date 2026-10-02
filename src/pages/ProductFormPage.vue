@@ -67,10 +67,14 @@
             <ion-input v-model="form.code" placeholder="opcional" :maxlength="100"></ion-input>
             <p v-if="err('code')" class="err-text">{{ err('code') }}</p>
           </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Descrição</ion-label>
-            <ion-textarea v-model="form.description" :rows="3" auto-grow :maxlength="50000"></ion-textarea>
-          </ion-item>
+          <div class="desc-block">
+            <RichTextEditor
+              v-model="form.description"
+              label="Descrição"
+              hint="Use a barra acima para títulos, listas e links — igual ao painel web."
+            />
+            <p v-if="err('description')" class="err-text">{{ err('description') }}</p>
+          </div>
           <ion-item>
             <ion-label position="stacked">Estoque</ion-label>
             <ion-input v-model="form.stock" inputmode="numeric" placeholder="ex.: 10"></ion-input>
@@ -138,7 +142,6 @@ import {
   IonSelectOption,
   IonSpinner,
   IonText,
-  IonTextarea,
   IonToggle,
   IonToast,
 } from '@ionic/vue'
@@ -152,6 +155,7 @@ import {
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 import FileUploader, { PRODUCT_CROP } from '@/components/FileUploader.vue'
 
 const route = useRoute()
@@ -300,5 +304,9 @@ onMounted(async () => {
   background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
+}
+.desc-block {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--ion-color-light, rgba(128, 128, 128, 0.2));
 }
 </style>

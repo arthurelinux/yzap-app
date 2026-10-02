@@ -45,7 +45,8 @@
           </ion-badge>
         </div>
 
-        <p v-if="product.description" class="muted desc">{{ product.description }}</p>
+        <!-- Descrição rica (mesmo HTML do editor; sanitizada no servidor). -->
+        <div v-if="product.description" class="rich-text desc" v-html="product.description"></div>
 
         <!-- Estoque rápido (permissão products, sem movimento). -->
         <ion-card class="panel-card">
@@ -390,7 +391,6 @@ onMounted(load)
 }
 .desc {
   margin: 10px 0 14px;
-  white-space: pre-wrap;
 }
 .panel-card {
   background: var(--ion-card-background);
