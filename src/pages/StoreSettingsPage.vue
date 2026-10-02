@@ -10,6 +10,20 @@
       </div>
 
       <template v-else-if="shop.store">
+        <!-- Abas: Identidade | Atendimento (GET/PUT /maps) | Equipe (só titular). -->
+        <ion-segment :value="tab" @ionChange="onTabChange" class="yz-segment">
+          <ion-segment-button value="identidade">
+            <ion-label>Identidade</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="atendimento">
+            <ion-label>Atendimento</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="isOwner" value="equipe">
+            <ion-label>Equipe</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <div v-if="tab === 'identidade'">
         <!-- ============ Dados da loja (PUT /store/settings — escalares) ============ -->
         <ion-card>
           <ion-card-content>
@@ -267,6 +281,13 @@
             </ion-button>
           </ion-card-content>
         </ion-card>
+        </div>
+        <div v-else-if="tab === 'atendimento'">
+          <MapsPanel ref="mapsPanel" />
+        </div>
+        <div v-else-if="tab === 'equipe'">
+          <TeamPanel v-if="isOwner" :show-title="false" />
+        </div>
       </template>
 
       <ion-toast
@@ -281,8 +302,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   IonButton,
   IonCard,
@@ -295,6 +316,8 @@ import {
   IonItem,
   IonLabel,
   IonPage,
+  IonSegment,
+  IonSegmentButton,
   IonTextarea,
   IonToggle,
   IonToast,
@@ -302,6 +325,8 @@ import {
 } from '@ionic/vue'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import MapsPanel from '@/components/MapsPanel.vue'
+import TeamPanel from '@/components/TeamPanel.vue'
 import { useShopStore } from '@/stores/shop'
 import { storeApi, type ImageFiles, type OpeningDay, type SettingsScalars } from '@/api/store'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
@@ -320,6 +345,36 @@ function detailValue(event: unknown): string {
 
 const shop = useShopStore()
 const router = useRouter()
+const route = useRoute()
+
+/** Abas da tela (deep-link via `?tab=`). Equipe só para o titular. */
+type SettingsTab = 'identidade' | 'atendimento' | 'equipe'
+const tab = ref<SettingsTab>('identidade')
+const isOwner = computed(() => shop.store?.is_owner === true)
+const mapsPanel = ref<InstanceType<typeof MapsPanel> | null>(null)
+/** PUT /store/settings descarta as coordenadas ao mudar o endereço — o próximo
+ * GET /maps recalcula. Marca aqui, recarrega ao ativar a aba. */
+let mapsDirty = false
+
+function segmentValue(event: unknown): string {
+  const detail = (event as CustomEvent<{ value?: string }> | undefined)?.detail
+  return String(detail?.value ?? '')
+}
+
+function onTabChange(event: unknown) {
+  const value = segmentValue(event)
+  if (value !== 'identidade' && value !== 'atendimento' && value !== 'equipe') return
+  if (value === 'equipe' && !isOwner.value) return
+  tab.value = value
+  void router.replace({ query: { ...route.query, tab: value } })
+}
+
+watch(tab, async (value) => {
+  if (value !== 'atendimento') return
+  await nextTick()
+  await mapsPanel.value?.refresh(mapsDirty)
+  mapsDirty = false
+})
 
 const loading = ref(true)
 const saving = ref(false)
@@ -450,6 +505,7 @@ async function saveData() {
     const updated = await storeApi.updateSettings(buildPayload())
     shop.applyStore(updated)
     hydrate()
+    mapsDirty = true
     toast('Alterações salvas')
   } catch (e: unknown) {
     if (await routeApiError(e, router)) return
@@ -583,11 +639,26 @@ onMounted(async () => {
     }
   }
   hydrate()
+  const requested = route.query.tab
+  if (requested === 'identidade' || requested === 'atendimento') {
+    tab.value = requested
+  } else if (requested === 'equipe' && shop.store?.is_owner) {
+    tab.value = 'equipe'
+  }
+  if (tab.value === 'atendimento') {
+    await nextTick()
+    await mapsPanel.value?.refresh(mapsDirty)
+    mapsDirty = false
+  }
   loading.value = false
 })
 </script>
 
 <style scoped>
+.yz-segment {
+  margin-bottom: 14px;
+  --background: var(--yz-card);
+}
 .section-sub {
   margin: 18px 0 6px;
   font-size: 0.95rem;
