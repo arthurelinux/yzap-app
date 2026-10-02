@@ -10,20 +10,37 @@
       </div>
 
       <template v-else-if="shop.store">
-        <!-- Abas: Identidade | Atendimento (GET/PUT /maps) | Equipe (só titular). -->
-        <ion-segment :value="tab" @ionChange="onTabChange" class="yz-segment">
-          <ion-segment-button value="identidade">
-            <ion-label>Identidade</ion-label>
+        <!-- Abas na ordem do painel
+          - (`catalog/admin/partials/settings-tabs.blade.php` no Laravel):
+          - Configurações, Temas, Conexão WhatsApp, Banners, Capa,
+          - Área de atendimento (+ Equipe separada, só titular).
+          - Item sem permissão SOME; 403 de plano vira upgrade inline no painel.
+          - Deep-link via `?tab=`. -->
+        <ion-segment :value="tab" @ionChange="onTabChange" class="yz-segment" :scrollable="true">
+          <ion-segment-button value="configuracoes">
+            <ion-label>Configurações</ion-label>
           </ion-segment-button>
-          <ion-segment-button value="atendimento">
+          <ion-segment-button v-if="visibleTabs.has('temas')" value="temas">
+            <ion-label>Temas</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="visibleTabs.has('whatsapp')" value="whatsapp">
+            <ion-label>WhatsApp</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="visibleTabs.has('banners')" value="banners">
+            <ion-label>Banners</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="visibleTabs.has('capa')" value="capa">
+            <ion-label>Capa</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="visibleTabs.has('atendimento')" value="atendimento">
             <ion-label>Atendimento</ion-label>
           </ion-segment-button>
-          <ion-segment-button v-if="isOwner" value="equipe">
+          <ion-segment-button v-if="visibleTabs.has('equipe')" value="equipe">
             <ion-label>Equipe</ion-label>
           </ion-segment-button>
         </ion-segment>
 
-        <div v-if="tab === 'identidade'">
+        <div v-if="tab === 'configuracoes'">
         <!-- ============ Dados da loja (PUT /store/settings — escalares) ============ -->
         <ion-card>
           <ion-card-content>
@@ -185,42 +202,30 @@
           </ion-card-content>
         </ion-card>
 
-        <!-- ============ Imagens (PUT /store/settings multipart) ============ -->
+        <!-- ============ Logo (PUT /store/settings multipart) ============
+          - A capa mora na aba Capa (PUT /appearance/cover) — sem duplicar envio. -->
         <ion-card>
           <ion-card-content>
-            <h2 class="card-title">Logo e capa</h2>
-            <div class="img-grid">
-              <FileUploader
-                v-model="logoModel"
-                label="Logo"
-                :crop="LOGO_CROP"
-                :max-size-m-b="3"
-                :current-url="shop.store.logo_url"
-                :progress="imageProgress"
-                :busy="savingImages"
-                :field-error="err('logo')"
-                hint="PNG, JPG ou WebP até 3 MB, com recorte quadrado."
-                @error="toast"
-              />
-              <FileUploader
-                v-model="coverModel"
-                label="Capa"
-                :max-size-m-b="5"
-                :current-url="shop.store.cover_image_url"
-                :progress="imageProgress"
-                :busy="savingImages"
-                :field-error="err('cover_image')"
-                hint="PNG, JPG ou WebP até 5 MB."
-                @error="toast"
-              />
-            </div>
+            <h2 class="card-title">Logo</h2>
+            <FileUploader
+              v-model="logoModel"
+              label="Logo"
+              :crop="LOGO_CROP"
+              :max-size-m-b="3"
+              :current-url="shop.store.logo_url"
+              :progress="imageProgress"
+              :busy="savingImages"
+              :field-error="err('logo')"
+              hint="PNG, JPG ou WebP até 3 MB, com recorte quadrado."
+              @error="toast"
+            />
             <p v-if="imageError" class="err-text">{{ imageError }}</p>
             <ion-button
               expand="block"
-              :disabled="savingImages || (!logoFile && !coverFile)"
+              :disabled="savingImages || !logoFile"
               @click="saveImages"
             >
-              {{ savingImages ? 'Enviando…' : 'Enviar imagens' }}
+              {{ savingImages ? 'Enviando…' : 'Enviar logo' }}
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -276,6 +281,18 @@
           </ion-card-content>
         </ion-card>
         </div>
+        <div v-else-if="tab === 'temas'">
+          <ThemePanel @denied="hideTab('temas')" />
+        </div>
+        <div v-else-if="tab === 'whatsapp'">
+          <WhatsappPanel @denied="hideTab('whatsapp')" />
+        </div>
+        <div v-else-if="tab === 'banners'">
+          <BannersPanel @denied="hideTab('banners')" />
+        </div>
+        <div v-else-if="tab === 'capa'">
+          <CoverPanel @denied="hideTab('capa')" />
+        </div>
         <div v-else-if="tab === 'atendimento'">
           <MapsPanel ref="mapsPanel" />
         </div>
@@ -322,8 +339,12 @@ import PageHead from '@/components/PageHead.vue'
 import FileUploader, { LOGO_CROP } from '@/components/FileUploader.vue'
 import MapsPanel from '@/components/MapsPanel.vue'
 import TeamPanel from '@/components/TeamPanel.vue'
+import ThemePanel from '@/components/ThemePanel.vue'
+import WhatsappPanel from '@/components/WhatsappPanel.vue'
+import BannersPanel from '@/components/BannersPanel.vue'
+import CoverPanel from '@/components/CoverPanel.vue'
 import { useShopStore } from '@/stores/shop'
-import { storeApi, type ImageFiles, type OpeningDay, type SettingsScalars } from '@/api/store'
+import { storeApi, type OpeningDay, type SettingsScalars } from '@/api/store'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 
 /** Helpers tipados p/ eventos Ionic (detail checked/value). */
@@ -340,10 +361,54 @@ const shop = useShopStore()
 const router = useRouter()
 const route = useRoute()
 
-/** Abas da tela (deep-link via `?tab=`). Equipe só para o titular. */
-type SettingsTab = 'identidade' | 'atendimento' | 'equipe'
-const tab = ref<SettingsTab>('identidade')
+/** Abas na ordem do painel (deep-link via `?tab=`). */
+type SettingsTab =
+  | 'configuracoes'
+  | 'temas'
+  | 'whatsapp'
+  | 'banners'
+  | 'capa'
+  | 'atendimento'
+  | 'equipe'
+const ALL_TABS: SettingsTab[] = [
+  'configuracoes',
+  'temas',
+  'whatsapp',
+  'banners',
+  'capa',
+  'atendimento',
+  'equipe',
+]
+const tab = ref<SettingsTab>('configuracoes')
 const isOwner = computed(() => shop.store?.is_owner === true)
+
+/** Permissão de loja (membro). Titular enxerga tudo; membro só o que tem. */
+function can(perm: string): boolean {
+  if (shop.store?.is_owner) return true
+  return shop.store?.permissions?.includes(perm) ?? false
+}
+
+/** Abas visíveis por permissão — item sem permissão SOME (regra do app). */
+const visibleTabs = ref<Set<SettingsTab>>(new Set(['configuracoes']))
+
+function computeVisibleTabs() {
+  const next = new Set<SettingsTab>(['configuracoes'])
+  if (can('store_theme')) next.add('temas').add('banners').add('capa')
+  if (can('notifications')) next.add('whatsapp')
+  if (can('delivery_maps')) next.add('atendimento')
+  if (shop.store?.is_owner) next.add('equipe')
+  visibleTabs.value = next
+}
+
+/** 403 de permissão em tempo de uso (rede de segurança) — a aba some. */
+function hideTab(name: SettingsTab) {
+  visibleTabs.value.delete(name)
+  if (tab.value === name) {
+    tab.value = 'configuracoes'
+    void router.replace({ query: { ...route.query, tab: 'configuracoes' } })
+  }
+}
+
 const mapsPanel = ref<InstanceType<typeof MapsPanel> | null>(null)
 /** PUT /store/settings descarta as coordenadas ao mudar o endereço — o próximo
  * GET /maps recalcula. Marca aqui, recarrega ao ativar a aba. */
@@ -356,9 +421,9 @@ function segmentValue(event: unknown): string {
 
 function onTabChange(event: unknown) {
   const value = segmentValue(event)
-  if (value !== 'identidade' && value !== 'atendimento' && value !== 'equipe') return
-  if (value === 'equipe' && !isOwner.value) return
-  tab.value = value
+  if (!ALL_TABS.includes(value as SettingsTab)) return
+  if (!visibleTabs.value.has(value as SettingsTab)) return
+  tab.value = value as SettingsTab
   void router.replace({ query: { ...route.query, tab: value } })
 }
 
@@ -411,20 +476,13 @@ const sugBusy = ref(false)
 const sugAvailable = ref<boolean | null>(null)
 
 const logoFile = ref<File | null>(null)
-const coverFile = ref<File | null>(null)
 const imageProgress = ref<number | null>(null)
 
-/** Pontes tipadas p/ o v-model do FileUploader (File | File[] | null). */
+/** Ponte tipada p/ o v-model do FileUploader (File | File[] | null). */
 const logoModel = computed<File | File[] | null>({
   get: () => logoFile.value,
   set: (value) => {
     logoFile.value = Array.isArray(value) ? (value[0] ?? null) : value
-  },
-})
-const coverModel = computed<File | File[] | null>({
-  get: () => coverFile.value,
-  set: (value) => {
-    coverFile.value = Array.isArray(value) ? (value[0] ?? null) : value
   },
 })
 
@@ -537,32 +595,26 @@ async function loadSuggestions() {
 }
 
 async function saveImages() {
-  const files: ImageFiles = {}
-  if (logoFile.value) files.logo = logoFile.value
-  if (coverFile.value) files.cover_image = coverFile.value
-  if (!files.logo && !files.cover_image) return
+  if (!logoFile.value) return
 
   savingImages.value = true
   imageError.value = null
   const before = shop.store
   try {
-    const updated = await storeApi.updateImages(files, (pct) => {
+    const updated = await storeApi.updateImages({ logo: logoFile.value }, (pct) => {
       imageProgress.value = pct
     })
     // Verificação de integridade: em PHP < 8.4 o multipart em PUT não é
     // parseado e o servidor descarta o arquivo em silêncio.
-    const logoFailed = Boolean(files.logo) && updated.logo_url === before?.logo_url
-    const coverFailed = Boolean(files.cover_image) && updated.cover_image_url === before?.cover_image_url
-    shop.applyStore(updated)
-    if (logoFailed || coverFailed) {
+    if (updated.logo_url === before?.logo_url) {
       imageError.value =
         'A API não recebeu a imagem (upload por PUT multipart indisponível nesta versão). Use o painel web ou atualize a API.'
     } else {
-      toast('Imagens atualizadas')
+      toast('Logo atualizado')
     }
-    // Zerar o v-model limpa as prévias do FileUploader (watch interno).
+    shop.applyStore(updated)
+    // Zerar o v-model limpa a prévia do FileUploader (watch interno).
     logoFile.value = null
-    coverFile.value = null
   } catch (e: unknown) {
     if (await routeApiError(e, router)) return
     errors.value = fieldErrors(e)
@@ -627,11 +679,12 @@ onMounted(async () => {
     }
   }
   hydrate()
+  computeVisibleTabs()
   const requested = route.query.tab
-  if (requested === 'identidade' || requested === 'atendimento') {
-    tab.value = requested
-  } else if (requested === 'equipe' && shop.store?.is_owner) {
-    tab.value = 'equipe'
+  if (typeof requested === 'string' && ALL_TABS.includes(requested as SettingsTab)) {
+    if (visibleTabs.value.has(requested as SettingsTab)) {
+      tab.value = requested as SettingsTab
+    }
   }
   if (tab.value === 'atendimento') {
     await nextTick()
@@ -666,12 +719,6 @@ onMounted(async () => {
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 6px;
-}
-.img-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 12px;
 }
 .day-row {
   border-bottom: 1px solid rgba(128, 128, 128, 0.15);
