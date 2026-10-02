@@ -96,12 +96,21 @@
           <ion-icon name="receipt-outline"></ion-icon>
           <h3>Nenhum pedido aqui</h3>
           <p>{{ emptyHint }}</p>
+          <ion-button router-link="/pedidos/novo">
+            <ion-icon slot="start" name="add-outline"></ion-icon>Lançar pedido avulso
+          </ion-button>
         </div>
 
         <ion-infinite-scroll :disabled="!list.hasMore" @ionInfinite="onInfinite">
           <ion-infinite-scroll-content></ion-infinite-scroll-content>
         </ion-infinite-scroll>
       </template>
+
+      <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+        <ion-fab-button router-link="/pedidos/novo" title="Lançar pedido avulso">
+          <ion-icon name="add-outline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
 
       <ion-toast
         :is-open="toastOpen"
@@ -121,6 +130,8 @@ import {
   IonBadge,
   IonButton,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,

@@ -96,6 +96,33 @@ export const ordersApi = {
     return api.get<{ data: Order }>(`/orders/${id}`)
   },
 
+  /**
+   * POST /orders — pedido avulso passo 1 (espelha `CatalogOrderController@store`
+   * via `ManualOrderService`): só identifica o cliente, cria em `draft` com
+   * total 0. Itens entram depois via `updateItems` (passo 2, como no painel).
+   */
+  createDraft(
+    payload: {
+      customer_id?: number | null
+      customer_name?: string
+      customer_phone?: string
+      customer_postal_code?: string
+      customer_address?: string
+      customer_address_number?: string
+      customer_address_complement?: string
+      customer_neighborhood?: string
+      customer_city_name?: string
+      customer_state_code?: string
+    },
+    opts?: RequestOptions,
+  ) {
+    return api.post<{ data: Order }>(
+      '/orders',
+      payload,
+      { idempotencyKey: opts?.idempotencyKey ?? newIdempotencyKey() },
+    )
+  },
+
   /** PATCH /orders/{order}/status — baixa estoque/estorno/notificação no servidor. */
   setStatus(id: number | string, status: OrderStatus, opts?: RequestOptions) {
     return api.patch<{ data: Order & { notification?: string } }>(
