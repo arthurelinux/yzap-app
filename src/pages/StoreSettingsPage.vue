@@ -10,12 +10,13 @@
       </div>
 
       <template v-else-if="shop.store">
-        <!-- Abas na ordem do painel
-          - (`catalog/admin/partials/settings-tabs.blade.php` no Laravel):
-          - Configurações, Temas, Conexão WhatsApp, Banners, Capa,
-          - Área de atendimento (+ Equipe separada, só titular).
+        <!-- Abas espelhando o painel: `settings-tabs.blade.php`
+          - (Configurações, Temas, Conexão WhatsApp, Banners, Capa,
+          - Área de atendimento) + item "Notificações" da sidebar do web
+          - (`notifications.edit`, destino próprio — NUNCA fundido com a
+          - conexão) + Equipe (só titular, `TeamPanel` reutilizado).
           - Item sem permissão SOME; 403 de plano vira upgrade inline no painel.
-          - Deep-link via `?tab=`. -->
+          - Deep-link via `?tab=` (ex.: `?tab=notificacoes`). -->
         <ion-segment :value="tab" @ionChange="onTabChange" class="yz-segment" :scrollable="true">
           <ion-segment-button value="configuracoes">
             <ion-label>Configurações</ion-label>
@@ -24,7 +25,10 @@
             <ion-label>Temas</ion-label>
           </ion-segment-button>
           <ion-segment-button v-if="visibleTabs.has('whatsapp')" value="whatsapp">
-            <ion-label>WhatsApp</ion-label>
+            <ion-label>Conexão WhatsApp</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="visibleTabs.has('notificacoes')" value="notificacoes">
+            <ion-label>Notificações</ion-label>
           </ion-segment-button>
           <ion-segment-button v-if="visibleTabs.has('banners')" value="banners">
             <ion-label>Banners</ion-label>
@@ -33,7 +37,7 @@
             <ion-label>Capa</ion-label>
           </ion-segment-button>
           <ion-segment-button v-if="visibleTabs.has('atendimento')" value="atendimento">
-            <ion-label>Atendimento</ion-label>
+            <ion-label>Área de atendimento</ion-label>
           </ion-segment-button>
           <ion-segment-button v-if="visibleTabs.has('equipe')" value="equipe">
             <ion-label>Equipe</ion-label>
@@ -287,6 +291,9 @@
         <div v-else-if="tab === 'whatsapp'">
           <WhatsappPanel @denied="hideTab('whatsapp')" />
         </div>
+        <div v-else-if="tab === 'notificacoes'">
+          <NotificationsPanel @denied="hideTab('notificacoes')" />
+        </div>
         <div v-else-if="tab === 'banners'">
           <BannersPanel @denied="hideTab('banners')" />
         </div>
@@ -341,6 +348,7 @@ import MapsPanel from '@/components/MapsPanel.vue'
 import TeamPanel from '@/components/TeamPanel.vue'
 import ThemePanel from '@/components/ThemePanel.vue'
 import WhatsappPanel from '@/components/WhatsappPanel.vue'
+import NotificationsPanel from '@/components/NotificationsPanel.vue'
 import BannersPanel from '@/components/BannersPanel.vue'
 import CoverPanel from '@/components/CoverPanel.vue'
 import { useShopStore } from '@/stores/shop'
@@ -361,11 +369,13 @@ const shop = useShopStore()
 const router = useRouter()
 const route = useRoute()
 
-/** Abas na ordem do painel (deep-link via `?tab=`). */
+/** Abas na ordem do painel (deep-link via `?tab=`). `notificacoes` é destino
+ * próprio (sidebar do web → `notifications.edit`), nunca fundido com `whatsapp`. */
 type SettingsTab =
   | 'configuracoes'
   | 'temas'
   | 'whatsapp'
+  | 'notificacoes'
   | 'banners'
   | 'capa'
   | 'atendimento'
@@ -374,6 +384,7 @@ const ALL_TABS: SettingsTab[] = [
   'configuracoes',
   'temas',
   'whatsapp',
+  'notificacoes',
   'banners',
   'capa',
   'atendimento',
@@ -394,7 +405,9 @@ const visibleTabs = ref<Set<SettingsTab>>(new Set(['configuracoes']))
 function computeVisibleTabs() {
   const next = new Set<SettingsTab>(['configuracoes'])
   if (can('store_theme')) next.add('temas').add('banners').add('capa')
-  if (can('notifications')) next.add('whatsapp')
+  // `notifications` libera DOIS destinos distintos (API e web também separam):
+  // conexão (`/whatsapp`) × mensagens automáticas (`/notifications`).
+  if (can('notifications')) next.add('whatsapp').add('notificacoes')
   if (can('delivery_maps')) next.add('atendimento')
   if (shop.store?.is_owner) next.add('equipe')
   visibleTabs.value = next
@@ -433,6 +446,18 @@ watch(tab, async (value) => {
   await mapsPanel.value?.refresh(mapsDirty)
   mapsDirty = false
 })
+
+/** Links internos (`router-link ?tab=`) trocam a query sem remontar a página:
+ * espelha a query na aba ativa para navegar entre destinos sem reload. */
+watch(
+  () => route.query.tab,
+  (value) => {
+    if (typeof value !== 'string') return
+    if (!ALL_TABS.includes(value as SettingsTab)) return
+    if (!visibleTabs.value.has(value as SettingsTab)) return
+    tab.value = value as SettingsTab
+  },
+)
 
 const loading = ref(true)
 const saving = ref(false)

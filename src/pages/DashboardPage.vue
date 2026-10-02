@@ -3,7 +3,7 @@
     <!-- Topbar do spike: sem título no toolbar (o título fica no conteúdo). -->
     <AppBar>
       <template #extra>
-        <ion-button v-if="canOrders" id="notif-btn" title="Notificações">
+        <ion-button v-if="canOrders" id="notif-btn" title="Pedidos recentes">
           <ion-icon name="notifications-outline"></ion-icon>
         </ion-button>
         <ion-button id="share-btn" title="Compartilhar" @click="onShare">
@@ -123,7 +123,10 @@
         </div>
       </template>
 
-      <!-- Notificações (polling do painel): dados REAIS de /orders/notifications. -->
+      <!-- Pedidos recentes (polling do painel): dados REAIS de
+        - `/orders/notifications`. Nome igual ao dropdown do web ("Pedidos
+        - recentes" + "Ver todos") para NÃO confundir com a configuração de
+        - notificações (`?tab=notificacoes`, mensagens automáticas). -->
       <ion-popover
         v-if="canOrders"
         trigger="notif-btn"
@@ -132,7 +135,8 @@
       >
         <ion-list lines="full">
           <ion-list-header>
-            <ion-label>Notificações</ion-label>
+            <ion-label>Pedidos recentes</ion-label>
+            <ion-button fill="clear" size="small" @click="goOrders">Ver todos</ion-button>
           </ion-list-header>
           <ion-item v-if="notifBusy">
             <ion-spinner name="dots"></ion-spinner>
@@ -337,6 +341,10 @@ async function loadNotifications() {
 
 async function openOrder(id: number) {
   await router.push(`/pedidos/${id}`)
+}
+
+async function goOrders() {
+  await router.push('/pedidos')
 }
 
 async function reload() {

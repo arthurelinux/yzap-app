@@ -1,10 +1,11 @@
-<!-- NotificationsPanel — mensagens automáticas da loja (GET/PUT /notifications).
+<!-- NotificationsPanel — destino "Notificações" (GET/PUT /notifications).
   -
-  - Toggles por status + texto por status (≤5000 chars) + tags de mesclagem
-  - (`{cliente}`, `{pedido}`…) com toque para inserir no campo focado.
-  -
-  - No app vive dentro da aba WhatsApp ("Mensagens automáticas"), pois são as
-  - mensagens enviadas pelo WhatsApp a cada status do pedido.
+  - Página própria do painel (`notifications.edit`, "Notificações do catálogo" /
+  - "Mensagens automáticas da loja"): toggles por status + texto por status
+  - (≤5000 chars) + tags de mesclagem (`{cliente}`, `{pedido}`…) com toque
+  - para inserir no campo focado. Destino SEPARADO de "Conexão WhatsApp"
+  - (`?tab=whatsapp`) — no web são itens distintos da navegação, e a API
+  - também separa (`/notifications` × `/whatsapp`).
   -
   - Gating: plano pago + permissão `notifications`. 403 de plano vira upgrade
   - inline (distinto de 403 de permissão, que mostra "sem permissão").
@@ -25,14 +26,6 @@
     </ion-card-content>
   </ion-card>
 
-  <ion-card v-else-if="denied">
-    <ion-card-content class="yz-state" style="padding: 24px 16px">
-      <ion-icon name="lock-closed-outline"></ion-icon>
-      <h3>Sem permissão</h3>
-      <p>Seu usuário não tem acesso às notificações desta loja.</p>
-    </ion-card-content>
-  </ion-card>
-
   <template v-else-if="config">
     <ion-card>
       <ion-card-content>
@@ -48,7 +41,11 @@
           </ion-badge>
         </div>
         <p v-if="!config.whatsapp.connected" class="hint">
-          Conecte o WhatsApp acima para as mensagens chegarem ao cliente.
+          Conecte o WhatsApp na
+          <router-link :to="{ path: '/configurar-loja', query: { tab: 'whatsapp' } }">
+            aba Conexão WhatsApp</router-link
+          >
+          para as mensagens chegarem ao cliente.
         </p>
       </ion-card-content>
     </ion-card>
@@ -135,13 +132,14 @@ import { ApiError } from '@/api/client'
 import { notificationsApi, type NotificationsConfig } from '@/api/notifications'
 import { apiMessage, fieldErrors } from '@/composables/errors'
 
+const emit = defineEmits<{ denied: [] }>()
+
 const router = useRouter()
 
 const loading = ref(true)
 const saving = ref(false)
 const config = ref<NotificationsConfig | null>(null)
 const planBlock = ref<{ plan: string | null; feature: string | null; message: string } | null>(null)
-const denied = ref(false)
 const saveError = ref<string | null>(null)
 const formErrors = ref<Record<string, string>>({})
 const toastOpen = ref(false)
@@ -184,14 +182,14 @@ function handleForbidden(e: ApiError) {
       message: e.message,
     }
   } else {
-    denied.value = true
+    // 403 de permissão em tempo de uso: a aba some (rede de segurança).
+    emit('denied')
   }
 }
 
 async function load() {
   loading.value = true
   planBlock.value = null
-  denied.value = false
   try {
     const { data } = await notificationsApi.show()
     hydrate(data)
@@ -269,13 +267,6 @@ async function save() {
     saving.value = false
   }
 }
-
-/** A aba chama `refresh()` ao conectar o WhatsApp (atualiza o badge). */
-async function refresh() {
-  await load()
-}
-
-defineExpose({ refresh })
 
 onMounted(() => {
   void load()

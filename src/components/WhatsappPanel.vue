@@ -1,5 +1,9 @@
-<!-- WhatsappPanel — aba Conexão WhatsApp do painel (GET /whatsapp +
-  - POST /whatsapp/sync-qr) + mensagens automáticas (`NotificationsPanel`).
+<!-- WhatsappPanel — destino "Conexão WhatsApp" (GET /whatsapp +
+  - POST /whatsapp/sync-qr). Destino PRÓPRIO, separado de "Notificações"
+  - (mensagens automáticas, `NotificationsPanel` em aba própria com
+  - `?tab=notificacoes`) — no painel são páginas distintas
+  - (`whatsapp.edit` × `notifications.edit`), e a API também separa
+  - (`/whatsapp` × `/notifications`).
   -
   - Espelha `resources/views/catalog/admin/whatsapp.blade.php` + o polling de
   - `public/assets/js/catalog/admin/whatsapp.js` (repo Laravel irmão): após o
@@ -89,7 +93,12 @@
 
         <div v-if="status.connected" class="connected-note">
           <ion-icon name="checkmark-circle-outline"></ion-icon>
-          <p>WhatsApp conectado. As mensagens automáticas abaixo estão ativas.</p>
+          <p>
+            WhatsApp conectado. As mensagens automáticas ficam na
+            <router-link :to="{ path: '/configurar-loja', query: { tab: 'notificacoes' } }">
+              aba Notificações</router-link
+            >.
+          </p>
         </div>
 
         <template v-else-if="status.qr_code">
@@ -106,8 +115,6 @@
         <p v-if="pollFeedback" class="hint" role="status">{{ pollFeedback }}</p>
       </ion-card-content>
     </ion-card>
-
-    <NotificationsPanel ref="messagesPanel" />
   </template>
 
   <ion-toast
@@ -136,7 +143,6 @@ import {
 import { ApiError } from '@/api/client'
 import { whatsappApi, whatsappStatusLabel, type WhatsappStatus } from '@/api/whatsapp'
 import { apiMessage, fieldErrors } from '@/composables/errors'
-import NotificationsPanel from '@/components/NotificationsPanel.vue'
 import { useShopStore } from '@/stores/shop'
 
 const emit = defineEmits<{ denied: [] }>()
@@ -161,8 +167,6 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 let polling = false
 let failures = 0
 let previousStatus = ''
-
-const messagesPanel = ref<InstanceType<typeof NotificationsPanel> | null>(null)
 
 const slugHint = computed(() => (shop.store?.slug ?? 'minha-loja').slice(0, 60))
 const hasStatus = computed(() => status.value !== null)
@@ -209,7 +213,6 @@ function startPolling() {
         stopPolling()
         if (becameConnected) {
           toast('WhatsApp conectado.')
-          await messagesPanel.value?.refresh()
         }
       }
     } catch {
@@ -293,7 +296,6 @@ async function sync() {
     if (next.connected) {
       stopPolling()
       toast('WhatsApp conectado.')
-      await messagesPanel.value?.refresh()
     } else {
       startPolling()
       if (!next.qr_code) toast('Instância sincronizada.')
