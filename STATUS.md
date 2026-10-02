@@ -55,3 +55,42 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 3. Máquina com Android SDK/Xcode: `cap add android/ios`, build nativo, teste ponta a ponta (Google, 401/403, offline, deeplink do MP)
 4. Fases futuras (não implementar por conta própria): Push (FCM/APNs), Maps nativo, fila de escrita offline (hoje só cache de leitura com aviso de dado desatualizado)
 5. Ambiente: Node via nvm no WSL (ver `.nvmrc`); nunca usar os shims do Node Windows em `/mnt/c`
+
+## Retomada da próxima sessão — prioridade imediata
+
+> Registrado em 2026-10-02. Os itens abaixo foram pedidos, mas **ainda não foram
+> implementados**. Não confundir com as entregas da tabela acima.
+
+1. **Uploads padronizados:** criar componente reutilizável para logo, capa, banners e
+   fotos de produto, com dropzone/touch, preview, trocar/remover, progresso, validação e
+   recorte de imagem. Preservar CropperJS (ou wrapper Vue compatível) e garantir contraste
+   claro/escuro. Não exibir o input de arquivo nativo sem estilização.
+2. **Configurações iguais ao painel web:** reorganizar a área conforme
+   `catalog/admin/partials/settings-tabs.blade.php`: Configurações, Temas, Conexão
+   WhatsApp, Banners, Capa e Área de atendimento. Equipe pode permanecer como área
+   própria para o titular. Hoje o app tem somente Identidade/Atendimento/Equipe.
+3. **Gap de API antes do item 2:** criar endpoints mobile para temas, tema customizado,
+   banners/hero, capa, configuração de notificações e WhatsApp/QR. A execução do agente
+   `mobile-api` que faria isso foi interrompida e **não entregou código**.
+4. **Editor rico de produto:** substituir o textarea de descrição por editor Vue
+   touch-friendly, com experiência equivalente ao CKEditor 4 usado no web
+   (`public/ckeditor`, produto usa Bold/Italic/Underline/RemoveFormat/listas etc.).
+   Sanitização e persistência HTML continuam no servidor; não copiar o CKEditor 4 antigo
+   diretamente para o app sem avaliar compatibilidade/licença. Preferência para um editor
+   Vue moderno com toolbar responsiva (ex.: TipTap), mantendo o contrato da API.
+5. **Tabs de Pedidos ilegíveis:** no mobile aparecem `ABERT...`, `CONC...`, `CANC...`.
+   Corrigir para rótulos completos e legíveis (Aberto, Concluído, Cancelado, Todos), com
+   scroll horizontal ou distribuição responsiva sem truncar palavras; preservar indicador
+   ativo e acessibilidade.
+6. **Fumaça visual obrigatória:** validar em 375px e desktop: tab-bar sempre no rodapé,
+   sidebar 232px sem quebra vertical, login legível/centralizado, settings e editor nos dois
+   temas. Não fazer build nativo antes dessas correções; o foco da próxima sessão é feature
+   e UI.
+
+### Estado do Maps
+
+- API real pronta: `GET/PUT /maps`, commit backend `16217ae`.
+- App atual configura retirada, entrega, limite por raio, raio em km e origem; servidor usa
+  `DeliveryRadiusService`, igual às regras do web.
+- Visualização atual é um círculo/fallback CSS. Mapa nativo interativo ainda depende de
+  chave Google restrita a `br.com.yzap.app`, SDK/plugin e teste em dispositivo.
