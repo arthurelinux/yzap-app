@@ -8,20 +8,21 @@
 
       <PageHead title="Pedidos" sub="Operação" />
 
-      <ion-segment :value="scope" mode="md" @ionChange="onScope">
-        <ion-segment-button value="open">
-          <ion-label>Abertos</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="completed">
-          <ion-label>Concluídos</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="cancelled">
-          <ion-label>Cancelados</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="all">
-          <ion-label>Todos</ion-label>
-        </ion-segment-button>
-      </ion-segment>
+      <!-- Scopes do contrato: open|completed|cancelled|all (padrão `open`).
+        Botões com rolagem horizontal: rótulo completo, sem truncar. -->
+      <div class="scope-tabs" role="tablist" aria-label="Filtrar pedidos por situação">
+        <button
+          v-for="s in ORDER_SCOPES"
+          :key="s.value"
+          type="button"
+          role="tab"
+          :aria-selected="scope === s.value ? 'true' : 'false'"
+          :class="['scope-tab', { active: scope === s.value }]"
+          @click="setScope(s.value)"
+        >
+          {{ s.label }}
+        </button>
+      </div>
 
       <div class="yz-toolbar-row">
         <ion-searchbar
@@ -124,30 +125,36 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
-  IonLabel,
   IonList,
   IonNote,
   IonPage,
   IonRefresher,
   IonRefresherContent,
   IonSearchbar,
-  IonSegment,
-  IonSegmentButton,
   IonSelect,
   IonSelectOption,
   IonSpinner,
   IonText,
   IonToast,
 } from '@ionic/vue'
-import { ordersApi, ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from '@/api/orders'
+import { ordersApi, ORDER_STATUSES, STATUS_LABELS } from '@/api/orders'
 import { routeApiError } from '@/composables/errors'
 import { useList } from '@/composables/useList'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
 
+/** Scopes exatos de GET /orders (contrato § grupo 6). Sem contadores na API. */
+const ORDER_SCOPES = [
+  { value: 'open', label: 'Aberto' },
+  { value: 'completed', label: 'Concluído' },
+  { value: 'cancelled', label: 'Cancelado' },
+  { value: 'all', label: 'Todos' },
+] as const
+type OrderScope = (typeof ORDER_SCOPES)[number]['value']
+
 const router = useRouter()
 const search = ref('')
-const scope = ref<'open' | 'completed' | 'cancelled' | 'all'>('open')
+const scope = ref<OrderScope>('open')
 const statusFilter = ref('')
 const toastOpen = ref(false)
 const toastMessage = ref('')
@@ -232,9 +239,9 @@ async function refresh() {
   }
 }
 
-function onScope(event: CustomEvent) {
-  const value = String(event.detail?.value ?? 'open')
-  scope.value = value as typeof scope.value
+function setScope(value: OrderScope) {
+  if (scope.value === value) return
+  scope.value = value
   void refresh()
 }
 
@@ -298,6 +305,48 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Abas de scope: rolagem horizontal suave no mobile, distribuídas no desktop.
+ * Rótulo sempre completo (sem ellipsis): cada aba tem largura própria. */
+.scope-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding: 2px 2px 10px;
+  margin-bottom: 4px;
+}
+.scope-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 99px;
+  border: 1px solid var(--yz-mist);
+  background: var(--yz-card);
+  color: var(--ion-text-color);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.scope-tab.active {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+.scope-tab:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+@media (min-width: 768px) {
+  .scope-tabs {
+    overflow: visible;
+  }
+  .scope-tab {
+    flex: 1 1 0;
+  }
+}
 ion-searchbar {
   --box-shadow: none;
 }
