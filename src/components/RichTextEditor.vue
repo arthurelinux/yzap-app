@@ -49,13 +49,13 @@
       <p v-if="linkError" class="err-text">{{ linkError }}</p>
     </div>
 
-    <editor-content :editor="editor" class="rte-area" />
+    <editor-content v-if="editor" :editor="editor" class="rte-area" />
     <p v-if="hint" class="hint">{{ hint }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { IonButton, IonIcon, IonInput } from '@ionic/vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
@@ -116,13 +116,10 @@ watch(
 watch(model, (value) => {
   const current = editor.value?.getHTML() ?? ''
   const next = value || ''
+  // `setContent` sem emitir update (padrão): não realimenta o `onUpdate`.
   if (editor.value && next !== current && (next !== '' || current !== '<p></p>')) {
-    editor.value.commands.setContent(next, { emitUpdate: false })
+    editor.value.commands.setContent(next)
   }
-})
-
-onBeforeUnmount(() => {
-  editor.value?.destroy()
 })
 
 interface ToolButton {
