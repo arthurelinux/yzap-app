@@ -462,6 +462,18 @@ ion-badge.yz-status-ready {
   color: #be185d;
 }
 
+/* Bug FAB × tab-bar: todo `ion-fab slot="fixed" vertical="bottom"` (adicionar
+ * cliente/produto/categoria/plano/pedido) ficava cortado atrás da tab-bar
+ * fixa no mobile. Offset global acima da barra (56px) + safe-area, nos dois
+ * temas e em todos os breakpoints mobile. No desktop (≥ lg) não há tab-bar e
+ * vale o offset padrão do Ionic. Auditoria: Customers, Products, Categories,
+ * AdminPlans e Orders (novo pedido) usam esse padrão — nenhum define offset
+ * próprio em escopo local. */
+@media (max-width: 991px) {
+  #main-content ion-fab[slot='fixed'][vertical='bottom'] {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
 /* ============================ RESPONSIVO ============================= */
 @media (max-width: 991px) {
   .stat-grid {
