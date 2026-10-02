@@ -104,9 +104,19 @@
               </div>
             </div>
             <p v-else class="muted">Nenhuma imagem na galeria.</p>
-            <div class="yz-field">
-              <input type="file" accept="image/*" multiple @change="pickImages" />
-            </div>
+            <FileUploader
+              :model-value="galleryFiles"
+              multiple
+              label="Adicionar fotos"
+              :crop="PRODUCT_CROP"
+              :max-size-m-b="4"
+              :max-files="10"
+              :progress="galleryProgress"
+              :busy="imgBusy"
+              hint="PNG, JPG ou WebP até 4 MB cada, com recorte quadrado."
+              @update:model-value="onGalleryPicked"
+              @error="toast"
+            />
           </ion-card-content>
         </ion-card>
 
@@ -179,6 +189,7 @@ import { catalogApi, type Product, type ProductImage, type ProductVariant } from
 import { apiMessage, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import FileUploader, { PRODUCT_CROP } from '@/components/FileUploader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -187,6 +198,8 @@ const id = String(route.params.id)
 const product = reactive<Partial<Product>>({})
 const variants = ref<ProductVariant[]>([])
 const quickStock = ref('')
+const galleryFiles = ref<File[] | null>(null)
+const galleryProgress = ref<number | null>(null)
 const loading = ref(true)
 const stockBusy = ref(false)
 const imgBusy = ref(false)
@@ -268,31 +281,30 @@ async function saveQuickStock() {
   }
 }
 
-function pickImages(event: Event) {
-  const input = event.target as HTMLInputElement | null
-  const files = Array.from(input?.files ?? [])
-  if (!files.length) return
-  void uploadImages(files, input)
+function onGalleryPicked(value: File | File[] | null) {
+  const files = Array.isArray(value) ? value : value ? [value] : []
+  galleryFiles.value = files
+  if (files.length) void uploadImages(files)
 }
 
-async function uploadImages(files: File[], input: HTMLInputElement | null) {
+async function uploadImages(files: File[]) {
+  if (!files.length) return
   imgBusy.value = true
   try {
-    const oversized = files.filter((f) => f.size > 4 * 1024 * 1024)
-    const ok = files.filter((f) => f.size <= 4 * 1024 * 1024)
-    if (oversized.length) toast('Imagens acima de 4 MB foram ignoradas.')
-    if (ok.length) {
-      await catalogApi.addImages(id, ok)
-      const { data } = await catalogApi.product(id)
-      Object.assign(product, data)
-      if (!oversized.length) toast('Imagens adicionadas.')
-    }
+    await catalogApi.addImages(id, files, (pct) => {
+      galleryProgress.value = pct
+    })
+    const { data } = await catalogApi.product(id)
+    Object.assign(product, data)
+    toast('Imagens adicionadas.')
   } catch (e: unknown) {
     if (await routeApiError(e, router)) return
     toast(apiMessage(e))
   } finally {
     imgBusy.value = false
-    if (input) input.value = ''
+    galleryProgress.value = null
+    // Zerar o v-model limpa as prévias do FileUploader (watch interno).
+    galleryFiles.value = []
   }
 }
 
@@ -411,8 +423,5 @@ onMounted(load)
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 99px;
-}
-.yz-field {
-  margin-top: 12px;
 }
 </style>

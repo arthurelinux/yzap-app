@@ -190,34 +190,29 @@
           <ion-card-content>
             <h2 class="card-title">Logo e capa</h2>
             <div class="img-grid">
-              <div>
-                <p class="stat-label">Logo</p>
-                <div class="img-preview">
-                  <img v-if="logoPreview" :src="logoPreview" alt="Logo" />
-                  <img v-else-if="shop.store.logo_url" :src="shop.store.logo_url" alt="Logo" />
-                  <span v-else class="hint">sem logo</span>
-                </div>
-                <input ref="logoInput" type="file" accept="image/*" class="hidden-input" @change="pickFile('logo', $event)" />
-                <ion-button size="small" fill="outline" @click="logoInput?.click()">
-                  <ion-icon slot="start" name="image-outline"></ion-icon>
-                  {{ logoFile ? 'Trocar' : 'Escolher' }}
-                </ion-button>
-                <p v-if="logoFile" class="hint">{{ logoFile.name }}</p>
-              </div>
-              <div>
-                <p class="stat-label">Capa</p>
-                <div class="img-preview cover">
-                  <img v-if="coverPreview" :src="coverPreview" alt="Capa" />
-                  <img v-else-if="shop.store.cover_image_url" :src="shop.store.cover_image_url" alt="Capa" />
-                  <span v-else class="hint">sem capa</span>
-                </div>
-                <input ref="coverInput" type="file" accept="image/*" class="hidden-input" @change="pickFile('cover', $event)" />
-                <ion-button size="small" fill="outline" @click="coverInput?.click()">
-                  <ion-icon slot="start" name="image-outline"></ion-icon>
-                  {{ coverFile ? 'Trocar' : 'Escolher' }}
-                </ion-button>
-                <p v-if="coverFile" class="hint">{{ coverFile.name }}</p>
-              </div>
+              <FileUploader
+                v-model="logoModel"
+                label="Logo"
+                :crop="LOGO_CROP"
+                :max-size-m-b="3"
+                :current-url="shop.store.logo_url"
+                :progress="imageProgress"
+                :busy="savingImages"
+                :field-error="err('logo')"
+                hint="PNG, JPG ou WebP até 3 MB, com recorte quadrado."
+                @error="toast"
+              />
+              <FileUploader
+                v-model="coverModel"
+                label="Capa"
+                :max-size-m-b="5"
+                :current-url="shop.store.cover_image_url"
+                :progress="imageProgress"
+                :busy="savingImages"
+                :field-error="err('cover_image')"
+                hint="PNG, JPG ou WebP até 5 MB."
+                @error="toast"
+              />
             </div>
             <p v-if="imageError" class="err-text">{{ imageError }}</p>
             <ion-button
@@ -227,7 +222,6 @@
             >
               {{ savingImages ? 'Enviando…' : 'Enviar imagens' }}
             </ion-button>
-            <p class="hint">Logo até 3 MB · capa até 5 MB.</p>
           </ion-card-content>
         </ion-card>
 
@@ -325,13 +319,12 @@ import {
 } from '@ionic/vue'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import FileUploader, { LOGO_CROP } from '@/components/FileUploader.vue'
 import MapsPanel from '@/components/MapsPanel.vue'
 import TeamPanel from '@/components/TeamPanel.vue'
 import { useShopStore } from '@/stores/shop'
 import { storeApi, type ImageFiles, type OpeningDay, type SettingsScalars } from '@/api/store'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
-
-type FileEvent = Event & { target: HTMLInputElement }
 
 /** Helpers tipados p/ eventos Ionic (detail checked/value). */
 function detailChecked(event: unknown): boolean {
@@ -419,10 +412,21 @@ const sugAvailable = ref<boolean | null>(null)
 
 const logoFile = ref<File | null>(null)
 const coverFile = ref<File | null>(null)
-const logoPreview = ref<string | null>(null)
-const coverPreview = ref<string | null>(null)
-const logoInput = ref<HTMLInputElement | null>(null)
-const coverInput = ref<HTMLInputElement | null>(null)
+const imageProgress = ref<number | null>(null)
+
+/** Pontes tipadas p/ o v-model do FileUploader (File | File[] | null). */
+const logoModel = computed<File | File[] | null>({
+  get: () => logoFile.value,
+  set: (value) => {
+    logoFile.value = Array.isArray(value) ? (value[0] ?? null) : value
+  },
+})
+const coverModel = computed<File | File[] | null>({
+  get: () => coverFile.value,
+  set: (value) => {
+    coverFile.value = Array.isArray(value) ? (value[0] ?? null) : value
+  },
+})
 
 function hydrate() {
   const s = shop.store
@@ -532,21 +536,6 @@ async function loadSuggestions() {
   }
 }
 
-function pickFile(which: 'logo' | 'cover', event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0] ?? null
-  if (which === 'logo') {
-    logoFile.value = file
-    if (logoPreview.value) URL.revokeObjectURL(logoPreview.value)
-    logoPreview.value = file ? URL.createObjectURL(file) : null
-  } else {
-    coverFile.value = file
-    if (coverPreview.value) URL.revokeObjectURL(coverPreview.value)
-    coverPreview.value = file ? URL.createObjectURL(file) : null
-  }
-  input.value = ''
-}
-
 async function saveImages() {
   const files: ImageFiles = {}
   if (logoFile.value) files.logo = logoFile.value
@@ -557,7 +546,9 @@ async function saveImages() {
   imageError.value = null
   const before = shop.store
   try {
-    const updated = await storeApi.updateImages(files)
+    const updated = await storeApi.updateImages(files, (pct) => {
+      imageProgress.value = pct
+    })
     // Verificação de integridade: em PHP < 8.4 o multipart em PUT não é
     // parseado e o servidor descarta o arquivo em silêncio.
     const logoFailed = Boolean(files.logo) && updated.logo_url === before?.logo_url
@@ -566,22 +557,19 @@ async function saveImages() {
     if (logoFailed || coverFailed) {
       imageError.value =
         'A API não recebeu a imagem (upload por PUT multipart indisponível nesta versão). Use o painel web ou atualize a API.'
-      logoFile.value = null
-      coverFile.value = null
-      logoPreview.value = null
-      coverPreview.value = null
     } else {
-      logoFile.value = null
-      coverFile.value = null
-      logoPreview.value = null
-      coverPreview.value = null
       toast('Imagens atualizadas')
     }
+    // Zerar o v-model limpa as prévias do FileUploader (watch interno).
+    logoFile.value = null
+    coverFile.value = null
   } catch (e: unknown) {
     if (await routeApiError(e, router)) return
+    errors.value = fieldErrors(e)
     imageError.value = apiMessage(e)
   } finally {
     savingImages.value = false
+    imageProgress.value = null
   }
 }
 
@@ -684,25 +672,6 @@ onMounted(async () => {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
   margin-bottom: 12px;
-}
-.img-preview {
-  height: 84px;
-  border: 1px dashed var(--yz-mist);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-bottom: 8px;
-  background: #fff;
-}
-.img-preview img {
-  max-width: 100%;
-  max-height: 80px;
-  object-fit: contain;
-}
-.hidden-input {
-  display: none;
 }
 .day-row {
   border-bottom: 1px solid rgba(128, 128, 128, 0.15);

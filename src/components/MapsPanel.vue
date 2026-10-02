@@ -88,7 +88,7 @@
               type="number"
               :min="0.1"
               :max="100"
-              :step="0.1"
+              step="0.1"
               :value="form.radius"
               @ionInput="onNumber"
             ></ion-input>

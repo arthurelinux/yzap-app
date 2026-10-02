@@ -66,29 +66,23 @@
           </ion-item>
         </ion-list>
 
-        <div class="yz-field">
-          <label>{{ original.receipt_url ? 'Trocar comprovante' : 'Comprovante' }}</label>
-          <input type="file" accept="image/*,.pdf,application/pdf" @change="pickFile" />
-          <p class="hint">JPG, PNG ou PDF até 5 MB.</p>
-          <a
-            v-if="original.receipt_url"
-            :href="original.receipt_url"
-            target="_blank"
-            rel="noopener"
-          >
-            Ver comprovante atual
-          </a>
-          <ion-button
-            v-if="isEdit && original.receipt_url"
-            size="small"
-            fill="outline"
-            color="danger"
-            :disabled="saving"
-            @click="removeReceipt = true"
-          >
-            Remover comprovante
-          </ion-button>
-        </div>
+        <FileUploader
+          v-model="receiptModel"
+          label="Comprovante"
+          accept="image/png,image/jpeg,image/webp,application/pdf,.pdf"
+          :allow-pdf="true"
+          :max-size-m-b="5"
+          :current-url="removeReceipt ? null : (original.receipt_url ?? null)"
+          :current-href="removeReceipt ? null : (original.receipt_url ?? null)"
+          :current-is-pdf="receiptIsPdf"
+          :removable-current="isEdit && Boolean(original.receipt_url) && !removeReceipt"
+          :progress="receiptProgress"
+          :busy="saving"
+          :field-error="err('receipt')"
+          hint="JPG, PNG ou PDF até 5 MB."
+          @error="toast"
+          @remove-current="removeReceipt = true"
+        />
 
         <div class="yz-actions">
           <ion-button type="submit" :disabled="saving">
@@ -141,6 +135,7 @@ import { EXPENSE_CATEGORIES, financeApi, type Expense } from '@/api/finance'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import FileUploader from '@/components/FileUploader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -158,6 +153,18 @@ const form = reactive({
 })
 const receiptFile = ref<File | null>(null)
 const removeReceipt = ref(false)
+const receiptProgress = ref<number | null>(null)
+
+/** Ponte tipada p/ o v-model do FileUploader (File | File[] | null). */
+const receiptModel = computed<File | File[] | null>({
+  get: () => receiptFile.value,
+  set: (value) => {
+    receiptFile.value = Array.isArray(value) ? (value[0] ?? null) : value
+  },
+})
+
+/** Comprovante atual em PDF mostra link em vez de miniatura. */
+const receiptIsPdf = computed(() => /\.pdf$/i.test(original.receipt_url ?? ''))
 const errors = ref<Record<string, string[]>>({})
 const loading = ref(false)
 const saving = ref(false)
@@ -177,17 +184,6 @@ function err(key: string): string | null {
 function detailValue(event: unknown): string {
   const detail = (event as CustomEvent<{ value?: string | number }>)?.detail
   return String(detail?.value ?? '')
-}
-
-function pickFile(event: Event) {
-  const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0] ?? null
-  if (file && file.size > 5 * 1024 * 1024) {
-    toast('Arquivo acima de 5 MB.')
-    if (input) input.value = ''
-    return
-  }
-  receiptFile.value = file
 }
 
 async function load() {
@@ -235,11 +231,15 @@ async function save() {
       if (form.status !== original.status) fd.append('status', form.status)
       if (removeReceipt.value) fd.append('remove_receipt', '1')
       if (receiptFile.value) fd.append('receipt', receiptFile.value)
-      await financeApi.updateExpense(id.value, fd)
+      await financeApi.updateExpense(id.value, fd, (pct) => {
+        receiptProgress.value = pct
+      })
       toast('Despesa atualizada.')
     } else {
       if (receiptFile.value) fd.append('receipt', receiptFile.value)
-      await financeApi.createExpense(fd)
+      await financeApi.createExpense(fd, (pct) => {
+        receiptProgress.value = pct
+      })
       toast('Despesa criada.')
     }
     await router.replace('/financeiro')
@@ -250,6 +250,7 @@ async function save() {
     toast(Object.keys(fields).length ? 'Confira os campos destacados.' : apiMessage(e))
   } finally {
     saving.value = false
+    receiptProgress.value = null
   }
 }
 
@@ -278,19 +279,5 @@ onMounted(load)
   background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
-}
-.yz-field {
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--yz-muted);
-}
-.yz-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.yz-field a {
-  display: inline-block;
-  margin-top: 8px;
 }
 </style>

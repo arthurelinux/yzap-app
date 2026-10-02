@@ -127,11 +127,13 @@ export const storeApi = {
   },
 
   /** Upload de logo/capa (multipart PUT — ver nota de transporte no topo). */
-  async updateImages(files: ImageFiles): Promise<StoreInfo> {
+  async updateImages(files: ImageFiles, onProgress?: (pct: number) => void): Promise<StoreInfo> {
     const form = new FormData()
     if (files.logo) form.append('logo', files.logo)
     if (files.cover_image) form.append('cover_image', files.cover_image)
-    const { data } = await api.upload<{ data: StoreInfo }>('/store/settings', form, 'PUT')
+    const { data } = await api.upload<{ data: StoreInfo }>('/store/settings', form, 'PUT', {
+      onProgress,
+    })
     return data
   },
 

@@ -96,16 +96,18 @@ export const financeApi = {
   },
 
   /** POST multipart (description, category, amount, due_date, notes?, receipt?). */
-  createExpense(fd: FormData) {
+  createExpense(fd: FormData, onProgress?: (pct: number) => void) {
     return api.upload<{ data: Expense }>('/finance/expenses', fd, 'POST', {
       idempotencyKey: newIdempotencyKey(),
+      onProgress,
     })
   },
 
   /** PUT multipart parcial + `status?` + `remove_receipt?`. */
-  updateExpense(id: number | string, fd: FormData) {
+  updateExpense(id: number | string, fd: FormData, onProgress?: (pct: number) => void) {
     return api.upload<{ data: Expense }>(`/finance/expenses/${id}`, fd, 'PUT', {
       idempotencyKey: newIdempotencyKey(),
+      onProgress,
     })
   },
 

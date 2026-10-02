@@ -61,11 +61,18 @@
           <strong>Criada em:</strong> {{ date(store.created_at) }}
         </div>
 
-        <div class="yz-field">
-          <label>Logo</label>
-          <input type="file" accept="image/*" @change="pickFile('logo', $event)" />
-          <ion-img v-if="store.logo_url" :src="store.logo_url" class="thumb"></ion-img>
-        </div>
+        <FileUploader
+          v-model="logoModel"
+          label="Logo"
+          :crop="LOGO_CROP"
+          :max-size-m-b="3"
+          :current-url="store.logo_url ?? null"
+          :progress="uploadProgress"
+          :busy="saving"
+          :field-error="logoErr"
+          hint="PNG, JPG ou WebP até 3 MB, com recorte quadrado."
+          @error="toast"
+        />
 
         <div class="yz-actions">
           <ion-button :disabled="saving" @click="save">
@@ -87,13 +94,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   IonButton,
   IonContent,
   IonIcon,
-  IonImg,
   IonInput,
   IonItem,
   IonLabel,
@@ -109,6 +115,7 @@ import { adminApi, type AdminStore } from '@/api/admin'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import FileUploader, { LOGO_CROP } from '@/components/FileUploader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,6 +132,16 @@ const form = reactive({
   is_published: true,
 })
 const logoFile = ref<File | null>(null)
+const uploadProgress = ref<number | null>(null)
+const logoErr = ref<string | null>(null)
+
+/** Ponte tipada p/ o v-model do FileUploader (File | File[] | null). */
+const logoModel = computed<File | File[] | null>({
+  get: () => logoFile.value,
+  set: (value) => {
+    logoFile.value = Array.isArray(value) ? (value[0] ?? null) : value
+  },
+})
 const loading = ref(true)
 const saving = ref(false)
 const loadError = ref('')
@@ -143,12 +160,6 @@ function date(value?: string): string {
 function toast(message: string) {
   toastMessage.value = message
   toastOpen.value = true
-}
-
-function pickFile(kind: 'logo', event: Event) {
-  const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0] ?? null
-  if (kind === 'logo') logoFile.value = file
 }
 
 /** Helpers tipados p/ eventos Ionic (detail checked/value). */
@@ -180,6 +191,7 @@ async function load() {
 
 async function save() {
   saving.value = true
+  logoErr.value = null
   try {
     // PATCH multipart parcial (grupo 4 do contrato): só o que o usuário mexeu.
     const fd = new FormData()
@@ -198,16 +210,20 @@ async function save() {
       toast('Nada para salvar.')
       return
     }
-    const { data } = await adminApi.updateStore(id, fd)
+    const { data } = await adminApi.updateStore(id, fd, (pct) => {
+      uploadProgress.value = pct
+    })
     Object.assign(store, data)
     logoFile.value = null
     toast('Loja atualizada.')
   } catch (e: unknown) {
     if (await routeApiError(e, router)) return
     const fields = fieldErrors(e)
+    logoErr.value = fields.logo?.[0] ?? null
     toast(Object.keys(fields).length ? `Confira: ${Object.keys(fields).join(', ')}` : apiMessage(e))
   } finally {
     saving.value = false
+    uploadProgress.value = null
   }
 }
 
@@ -225,20 +241,5 @@ onMounted(load)
   font-size: 13px;
   color: var(--yz-muted);
   line-height: 1.7;
-}
-.yz-field {
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--yz-muted);
-}
-.yz-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.thumb {
-  max-width: 140px;
-  margin-top: 8px;
-  border-radius: 10px;
 }
 </style>

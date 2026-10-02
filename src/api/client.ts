@@ -97,6 +97,12 @@ export interface RequestOptions {
   idempotencyKey?: string
   /** Header X-Store-Id (super-admin operando outra loja). */
   storeId?: number | string
+  /**
+   * Progresso real de envio (0–100). Quando definido E o corpo é FormData, o
+   * envio usa XMLHttpRequest para medir `upload.onprogress` (fetch não expõe
+   * progresso de upload). Sem ele, o envio segue por fetch normalmente.
+   */
+  onProgress?: (pct: number) => void
 }
 
 function isFormData(body: unknown): body is FormData {
@@ -132,6 +138,11 @@ async function request<T>(
     headers.set('X-Store-Id', String(opts.storeId))
   }
 
+  // Upload com progresso real: fetch não mede envio, XHR mede (upload.onprogress).
+  if (isFormData(init.body) && opts.onProgress) {
+    return requestXhr<T>(path, init.method ?? 'GET', init.body, headers, opts.onProgress)
+  }
+
   const res = await fetch(`${BASE}${path}`, { ...init, headers })
 
   if (res.status === 401) {
@@ -159,6 +170,59 @@ async function request<T>(
   const text = await res.text()
   if (!text) return undefined as T
   return JSON.parse(text) as T
+}
+
+/** Envio multipart via XHR p/ medir progresso real de upload (0–100). */
+function requestXhr<T>(
+  path: string,
+  method: string,
+  form: FormData,
+  headers: Headers,
+  onProgress: (pct: number) => void,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open(method, `${BASE}${path}`)
+    headers.forEach((value, key) => {
+      // O browser monta o boundary do multipart; nunca setar Content-Type.
+      if (key.toLowerCase() === 'content-type') return
+      xhr.setRequestHeader(key, value)
+    })
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)))
+      }
+    }
+    xhr.onload = () => {
+      let body: ApiErrorBody = {}
+      try {
+        body = (xhr.responseText ? JSON.parse(xhr.responseText) : {}) as ApiErrorBody
+      } catch {
+        /* corpo não-JSON */
+      }
+      if (xhr.status === 401) {
+        onUnauthorized()
+        reject(new ApiError(401, body))
+        return
+      }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new ApiError(xhr.status, body))
+        return
+      }
+      if (xhr.status === 204 || !xhr.responseText) {
+        resolve(undefined as T)
+        return
+      }
+      try {
+        resolve(JSON.parse(xhr.responseText) as T)
+      } catch {
+        reject(new Error('Resposta inválida do servidor.'))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Falha de rede. Verifique a conexão.'))
+    xhr.ontimeout = () => reject(new Error('Tempo esgotado. Tente novamente.'))
+    xhr.send(form)
+  })
 }
 
 export const api = {

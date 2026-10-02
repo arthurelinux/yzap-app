@@ -97,8 +97,8 @@ export const catalogApi = {
   },
 
   /** POST multipart: name, price (texto BR ok), image? (4 MB) etc. */
-  createProduct(fd: FormData) {
-    return api.upload<{ data: Product }>('/products', fd, 'POST')
+  createProduct(fd: FormData, onProgress?: (pct: number) => void) {
+    return api.upload<{ data: Product }>('/products', fd, 'POST', { onProgress })
   },
 
   /**
@@ -135,10 +135,12 @@ export const catalogApi = {
   },
 
   /** POST /products/{product}/images — multipart `images[]`. */
-  addImages(id: number | string, files: File[]) {
+  addImages(id: number | string, files: File[], onProgress?: (pct: number) => void) {
     const fd = new FormData()
     for (const f of files) fd.append('images[]', f)
-    return api.upload<{ data: ProductImage[] }>(`/products/${id}/images`, fd, 'POST')
+    return api.upload<{ data: ProductImage[] }>(`/products/${id}/images`, fd, 'POST', {
+      onProgress,
+    })
   },
 
   setPrimaryImage(imageId: number | string) {

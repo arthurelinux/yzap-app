@@ -69,8 +69,8 @@ export const adminApi = {
   // PATCH parcial multipart (name/slug/sector/whatsapp/description/accent_color/
   // *_url/logo/is_published). No servidor atual o PHP não parseia multipart em PUT —
   // PATCH é o método do contrato e funciona.
-  updateStore: (id: number | string, fd: FormData) =>
-    api.patch<{ data: AdminStore }>(`/admin/stores/${id}`, fd),
+  updateStore: (id: number | string, fd: FormData, onProgress?: (pct: number) => void) =>
+    api.patch<{ data: AdminStore }>(`/admin/stores/${id}`, fd, { onProgress }),
 
   // GET /admin/users — ?search? (nome/e-mail), ?page&per_page → {data, meta}
   users: (p: { page?: number; per_page?: number; search?: string } = {}) =>

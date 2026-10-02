@@ -89,11 +89,18 @@
           </ion-item>
         </ion-list>
 
-        <div class="yz-field">
-          <label>{{ isEdit && original.image_url ? 'Trocar imagem' : 'Imagem' }}</label>
-          <input type="file" accept="image/*" @change="pickFile" />
-          <p class="hint">JPG/PNG até 4 MB. Na edição a imagem entra pela galeria do produto.</p>
-        </div>
+        <FileUploader
+          v-model="imageModel"
+          :label="isEdit && original.image_url ? 'Trocar imagem' : 'Imagem'"
+          :crop="PRODUCT_CROP"
+          :max-size-m-b="4"
+          :current-url="isEdit ? (original.image_url ?? null) : null"
+          :progress="uploadProgress"
+          :busy="saving"
+          :field-error="err('image')"
+          hint="PNG, JPG ou WebP até 4 MB, com recorte quadrado. Na edição, a imagem entra pela galeria do produto."
+          @error="toast"
+        />
 
         <div class="yz-actions">
           <ion-button type="submit" :disabled="saving">
@@ -145,6 +152,7 @@ import {
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
+import FileUploader, { PRODUCT_CROP } from '@/components/FileUploader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -165,6 +173,15 @@ const form = reactive({
   stock_min: '',
 })
 const imageFile = ref<File | null>(null)
+const uploadProgress = ref<number | null>(null)
+
+/** Ponte tipada p/ o v-model do FileUploader (File | File[] | null). */
+const imageModel = computed<File | File[] | null>({
+  get: () => imageFile.value,
+  set: (value) => {
+    imageFile.value = Array.isArray(value) ? (value[0] ?? null) : value
+  },
+})
 const errors = ref<Record<string, string[]>>({})
 const loading = ref(false)
 const saving = ref(false)
@@ -184,17 +201,6 @@ function err(key: string): string | null {
 function detailChecked(event: unknown): boolean {
   const detail = (event as CustomEvent<{ checked?: boolean }>)?.detail
   return Boolean(detail?.checked)
-}
-
-function pickFile(event: Event) {
-  const input = event.target as HTMLInputElement | null
-  const file = input?.files?.[0] ?? null
-  if (file && file.size > 4 * 1024 * 1024) {
-    toast('Imagem acima de 4 MB — escolha uma menor.')
-    if (input) input.value = ''
-    return
-  }
-  imageFile.value = file
 }
 
 async function loadCategories() {
@@ -257,7 +263,9 @@ async function save() {
         Object.assign(original, data)
       }
       if (imageFile.value) {
-        await catalogApi.addImages(productId, [imageFile.value])
+        await catalogApi.addImages(productId, [imageFile.value], (pct) => {
+          uploadProgress.value = pct
+        })
         const { data } = await catalogApi.product(productId)
         Object.assign(original, data)
       }
@@ -265,7 +273,9 @@ async function save() {
       await router.replace(`/produtos/${productId}`)
     } else {
       const fd = productFormData(form, imageFile.value)
-      const { data } = await catalogApi.createProduct(fd)
+      const { data } = await catalogApi.createProduct(fd, (pct) => {
+        uploadProgress.value = pct
+      })
       toast('Produto cadastrado.')
       await router.replace(`/produtos/${data.id}`)
     }
@@ -276,6 +286,7 @@ async function save() {
     toast(Object.keys(fields).length ? 'Confira os campos destacados.' : apiMessage(e))
   } finally {
     saving.value = false
+    uploadProgress.value = null
   }
 }
 
@@ -289,15 +300,5 @@ onMounted(async () => {
   background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
-}
-.yz-field {
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--yz-muted);
-}
-.yz-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
 }
 </style>
