@@ -106,7 +106,7 @@
         </ion-infinite-scroll>
       </template>
 
-      <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="yz-fab">
         <ion-fab-button router-link="/pedidos/novo" title="Lançar pedido avulso">
           <ion-icon name="add-outline"></ion-icon>
         </ion-fab-button>

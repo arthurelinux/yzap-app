@@ -89,9 +89,9 @@ ion-tab-bar.mobile-tabs {
     border-top: 1px solid var(--ion-border-color);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  /* Conteúdo não fica escondido atrás da barra fixa. */
+  /* Conteúdo não fica escondido atrás da barra fixa (deriva da altura real). */
   #main-content ion-content {
-    --padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    --padding-bottom: calc(var(--yz-tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px);
   }
   ion-tab-bar.mobile-tabs ion-tab-button[selected] {
     color: var(--ion-color-primary);
@@ -462,16 +462,30 @@ ion-badge.yz-status-ready {
   color: #be185d;
 }
 
-/* Bug FAB × tab-bar: todo `ion-fab slot="fixed" vertical="bottom"` (adicionar
+/* Bug FAB × tab-bar: todo `ion-fab slot="fixed"` (adicionar
  * cliente/produto/categoria/plano/pedido) ficava cortado atrás da tab-bar
- * fixa no mobile. Offset global acima da barra (56px) + safe-area, nos dois
+ * fixa no mobile (bottom:10px padrão do Ionic).
+ * Causa raiz (4a5b3b5 não pegou): o seletor antigo dependia do atributo
+ * `vertical="bottom"`, mas o Stencil do Ionic declara `vertical`/`horizontal`
+ * com `reflect: false` (fab.js: `reflect: false`) — o atributo não é refletido
+ * no elemento renderizado, só as classes `fab-vertical-bottom` /
+ * `fab-horizontal-end` (`:host(.fab-vertical-bottom) { bottom: 10px }`). A regra
+ * antiga nunca casava no DOM real, então o FAB ficava a 10px do viewport,
+ * atrás da barra (~58–60px + safe-area). Sintaxe do CSS estava válida
+ * (120 `{` / 120 `}`) e nenhum ancestral tem transform/filter — descartados.
+ * Fix robusto: classe própria `yz-fab` nos 5 FABs (não depende de atributo do
+ * Stencil) + fallback pela classe garantida `.fab-vertical-bottom`, offset
+ * derivado de `--yz-tabbar-h` (64px teto medido: ícone 22px + margens 6+2 +
+ * label ~16 + paddings 3+2 + border) + `--yz-fab-gap` + safe-area, nos dois
  * temas e em todos os breakpoints mobile. No desktop (≥ lg) não há tab-bar e
  * vale o offset padrão do Ionic. Auditoria: Customers, Products, Categories,
- * AdminPlans e Orders (novo pedido) usam esse padrão — nenhum define offset
- * próprio em escopo local. */
+ * AdminPlans e Orders usam `class="yz-fab"` — nenhum define offset próprio. */
 @media (max-width: 991px) {
-  #main-content ion-fab[slot='fixed'][vertical='bottom'] {
-    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  #main-content ion-fab.yz-fab,
+  #main-content ion-fab.fab-vertical-bottom {
+    bottom: calc(
+      var(--yz-tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--yz-fab-gap)
+    );
   }
 }
 /* ============================ RESPONSIVO ============================= */

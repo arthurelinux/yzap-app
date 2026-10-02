@@ -41,6 +41,12 @@
 
   /* Cor de destaque da loja (GET /store → accent_color). Sobrescrita em runtime. */
   --yz-accent: var(--yz-primary);
+
+  /* Altura real da tab-bar mobile (ícone 22px + margens + label + paddings ≈
+   * 57–60px + border 1px; 64px é o teto conservador medido no Ionic 9) e folga
+   * do FAB acima dela. O FAB deriva o offset dessas vars — nunca de chute fixo. */
+  --yz-tabbar-h: 64px;
+  --yz-fab-gap: 16px;
 }
 
 /* Escuro: manter a identidade YZap (o spike mantém primary verde no dark;

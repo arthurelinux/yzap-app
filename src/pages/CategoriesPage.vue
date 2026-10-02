@@ -64,7 +64,7 @@
         </div>
       </template>
 
-      <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab slot="fixed" vertical="bottom" horizontal="end" class="yz-fab">
         <ion-fab-button @click="create">
           <ion-icon name="add-outline"></ion-icon>
         </ion-fab-button>
