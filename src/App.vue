@@ -118,6 +118,8 @@ const sections = computed<MenuSection[]>(() => {
 
   const conta: MenuEntry[] = [
     { label: 'Assinatura', icon: 'card-outline', path: '/assinatura' },
+    // Afiliados (grupo 11): só auth, sem permissão de loja — sempre visível.
+    { label: 'Indicar e ganhar', icon: 'gift-outline', path: '/afiliados' },
   ]
   // Equipe: só o titular gerencia (mesma regra do painel; contrato § grupo 2).
   if (shop.store?.is_owner) {

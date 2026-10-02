@@ -6,7 +6,7 @@
         <ion-button v-if="canOrders" id="notif-btn" title="Pedidos recentes">
           <ion-icon name="notifications-outline"></ion-icon>
         </ion-button>
-        <ion-button id="share-btn" title="Compartilhar" @click="onShare">
+        <ion-button id="share-btn" title="Indicar e ganhar" @click="goAffiliates">
           <ion-icon name="share-social-outline"></ion-icon>
         </ion-button>
       </template>
@@ -405,23 +405,9 @@ async function openQrHighRes() {
   })
 }
 
-async function onShare() {
-  const url = shop.store?.public_url ?? ''
-  try {
-    if (navigator.share) {
-      await navigator.share({ title: shop.store?.name ?? 'YZap', url })
-      return
-    }
-  } catch {
-    /* usuário cancelou */
-  }
-  try {
-    await navigator.clipboard.writeText(url)
-    toastMessage.value = 'Link copiado'
-    toastOpen.value = true
-  } catch {
-    /* sem clipboard */
-  }
+/** Atalho p/ a página de afiliados (GET /affiliates: link + código + stats). */
+async function goAffiliates() {
+  await router.push('/afiliados')
 }
 
 onMounted(async () => {

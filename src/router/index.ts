@@ -129,6 +129,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/pedidos/novo',
+    name: 'pedido-novo',
+    component: () => import('@/pages/OrderFormPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/pedidos/:id',
     name: 'pedido-detalhe',
     component: () => import('@/pages/OrderDetailPage.vue'),
@@ -205,6 +211,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/assinatura',
     name: 'assinatura',
     component: () => import('@/pages/SubscriptionPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  /* ---------- Grupo 11 — afiliados (só auth, sem active: acompanha após o teste) ---------- */
+  {
+    path: '/afiliados',
+    name: 'afiliados',
+    component: () => import('@/pages/AffiliatesPage.vue'),
     meta: { requiresAuth: true },
   },
   // Retorno do browser externo (deeplink/universal link): SÓ navega — o status
