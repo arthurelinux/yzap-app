@@ -1,6 +1,6 @@
 # YZap Mobile — estado atual
 
-> Última atualização: 2026-10-01 · Branch API: `mobile/api-lojista` · App: `main`
+> Última atualização: 2026-10-02 · Branch API: `mobile/api-lojista` · App: `main`
 
 ## Repositórios
 
@@ -21,18 +21,33 @@ Ordem de merge: API primeiro (`mobile/api-lojista` → `develop`), depois app (`
 - Grupo 6 ✅ Operacional: orders (+polling), products (+estoque, variantes, imagens), categories, stock, finance, cash
 - Contrato formal: `docs/mobile-api-contrato.md` (grupos 1–6 ✅, base `https://yzap.com.br`)
 - Decisões: MP sempre externo; `stock`×`finance` resolvido (mobile usa `stock`); reset de senha revoga tokens do app
-- Spike visual (gabarto do app): rota local `/preview/ionic` — 404 em produção
+- Spike visual (gabarito do app): rota local `/preview/ionic` — 404 em produção
 
-## App — esqueleto + auth wired (fases 1–2 parciais)
+## App — features reais por grupo (zero "em breve")
+
+Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
+(`ComingSoonPage`/`/em-breve` removidos). Itens sem permissão SOMEM do menu;
+403 de plano (`PlanBlockedPage`) × 403 de permissão (`ForbiddenPage`) são telas distintas.
+
+| Commit | Grupo | O que ficou REAL |
+|---|---|---|
+| `457779b` | ui | Shell/sidebar fiel ao spike (232px, itens 1 linha), dark/light persistido (`yz-theme`), tokens/`app.css`, AppBar/PageHead, dashboard com dados reais (`/categories`, `/products`, `/orders/notifications`), perfil (troca de senha + logout-all), cliente HTTP + `useList`/`errors` |
+| `3e01ecf` | 2 | Configurações da loja (JSON PUT escalares + multipart só p/ logo/capa com verificação, link-suggestions, horários 7 dias) + equipe (CRUD, permissões, toggle `is_active` sempre enviado) |
+| `1272b4e` | 3 | Clientes: lista paginada + busca + infinite scroll, lookup por telefone (404 → cadastro pré-preenchido), detalhe com stats/pedidos, CRUD com 422 por campo |
+| `5b78fc2` | 5 | Planos/assinatura: preços/períodos/limites/benefícios, checkout → `Browser.open(checkout_url)` + polling 5s de `/billing/status/{payment}` + retomada via deeplink (`/billing/return` só navega; ativação é do webhook) |
+| `1f09540` | 4 | Admin (`mobile:admin`): lojas (lista/detalhe PATCH multipart), usuários (ativar, grant-access com plano/período), planos (CRUD, `free` sem preços) |
+| `2789c5c` | 6 | Operacional: **pedidos** (scopes abertos/concluídos/cancelados/todos, status, busca, polling `/orders/notifications` com aviso de pedido novo, 7 status via PATCH + `Idempotency-Key`, confirmação em cancelar), **produtos** (lista/filtros, cadastro multipart POST, edição JSON PUT, imagens com principal/remoção, estoque rápido, variantes somente leitura), **categorias** (CRUD + reorder), **estoque** (saldos, filtros baixos/zerados com contadores do meta, ajuste com `Idempotency-Key` → movimento imutável), **financeiro** (fluxo por período, receita com summary, despesas CRUD + cancel com idempotência, 10 categorias do painel), **caixa** (abrir/lançar movimento/fechar com idempotência, breakdown) |
+| `e8157f7` | ui-fixes | Bugs confirmados corrigidos: (1) sidebar 232px + `nowrap/ellipsis` sem badges "em breve" (sem permissão some, sem placeholder); (2) tab-bar fixa no bottom com safe-area + aba ativa destacada (sem `ion-tabs` o `slot="bottom"` não fixava); (3) auditoria de contraste light/dark (`--ion-text-color`/`--yz-muted`/`--yz-bg` por tema, `--yz-card` como alias de `--ion-card-background`, logo do login invertido no dark); (4) fidelidade ao spike (`--background` do toolbar por tema, títulos com cor do tema, 48px Copiar/Abrir, QR/Abrir via `public_url` real `https://yzap.com.br/loja/<slug>`) |
 
 - Stack: `@ionic/vue` 9.0.6, Vue 3.5, Pinia 4, Capacitor 8, Vite 8 · `applicationId` fixo: **`br.com.yzap.app`**
 - `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
-- Wired real (zero mock): login senha + Google, `/me`, `/account/status`, `GET /store`; token em Keychain/Keystore; telas 401/403/renovação; resto vai para "em breve"
-- Build 275 kB gzip · `vue-tsc` OK · sem segredos no bundle
+- Sessão: token em Keychain/Keystore (nunca `localStorage`); `401` derruba a sessão
+- `vue-tsc --noEmit` verde após cada grupo · sem segredos no bundle · builds (`npm run build`/`cap sync`) ficam para a fase de release
 
 ## Pendências
 
-1. Google Console (mesmo projeto do web): Client ID **Android** p/ `br.com.yzap.app` (SHA-1 debug + release + Play App Signing) e **iOS** (bundle ID); audiência = client web atual; tela de consentimento em produção
-2. Telas grupo 2: settings/equipe · depois grupos 3–6, um por vez, após contrato ✅
-3. Máquina com Android SDK/Xcode: `cap add android/ios`, build nativo, teste ponta a ponta (Google, 401/403, offline)
-4. Ambiente: Node via nvm no WSL (ver `.nvmrc`); nunca usar os shims do Node Windows em `/mnt/c`
+1. **Backend (para o agente `mobile-api`)**: o PHP (≤8.3) **não parseia `multipart/form-data` em `PUT`** — validado em `PUT /store/settings`. O app contorna enviando escalares em JSON e imagens por multipart só quando o método é POST (produtos: imagem nova vai por `POST /products/{id}/images`). Registrar defeito/possível correção no servidor (ex.: ler `php://input` ou exigir POST + `_method`).
+2. Google Console (mesmo projeto do web): Client ID **Android** p/ `br.com.yzap.app` (SHA-1 debug + release + Play App Signing) e **iOS** (bundle ID); audiência = client web atual; tela de consentimento em produção
+3. Máquina com Android SDK/Xcode: `cap add android/ios`, build nativo, teste ponta a ponta (Google, 401/403, offline, deeplink do MP)
+4. Fases futuras (não implementar por conta própria): Push (FCM/APNs), Maps nativo, fila de escrita offline (hoje só cache de leitura com aviso de dado desatualizado)
+5. Ambiente: Node via nvm no WSL (ver `.nvmrc`); nunca usar os shims do Node Windows em `/mnt/c`
