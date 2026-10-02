@@ -150,17 +150,19 @@ async function onGoogleLogin() {
   height: 34px;
   width: auto;
   display: block;
-  margin-bottom: 18px;
+  margin: 0 auto 18px;
 }
 h1 {
   font-size: 1.4rem;
   font-weight: 800;
   margin: 0 0 4px;
   color: var(--ion-text-color);
+  text-align: center;
 }
 .sub {
   color: var(--yz-muted);
   margin: 0 0 20px;
+  text-align: center;
 }
 .field {
   --background: transparent;
