@@ -33,7 +33,7 @@
                 <ion-badge :color="plan.is_active === false ? 'medium' : 'success'">
                   {{ plan.is_active === false ? 'inativo' : 'ativo' }}
                 </ion-badge>
-                <ion-badge v-if="plan.is_free" color="tertiary">gratuito</ion-badge>
+                <ion-badge v-if="plan.is_free" color="medium">gratuito</ion-badge>
               </h3>
               <p>
                 {{ price(plan.prices?.monthly) }}/mês ·

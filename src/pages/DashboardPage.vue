@@ -70,7 +70,7 @@
                 <ion-button
                   v-if="can('products')"
                   fill="outline"
-                  color="tertiary"
+                  color="primary"
                   router-link="/categorias"
                 >
                   <ion-icon slot="start" name="grid-outline"></ion-icon>Gerenciar categorias
@@ -86,7 +86,7 @@
                 <ion-button
                   v-if="can('orders')"
                   fill="outline"
-                  color="secondary"
+                  color="primary"
                   router-link="/pedidos"
                 >
                   <ion-icon slot="start" name="receipt-outline"></ion-icon>Gerenciar pedidos
