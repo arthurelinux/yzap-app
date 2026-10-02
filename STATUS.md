@@ -42,9 +42,11 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 | `b667af0` | login | Wordmark `horizontal.png` centralizada acima do form + título/sub centralizados (inversão dark segue a mesma regra do sidebar via `.login-logo` em `app.css`) |
 | `16c3312` | ui | Ações `secondary`/`tertiary` viram verde da marca (`primary` #087f6f): dashboard (categorias, pedidos); badge "gratuito" vira `medium` (igual ao chip "Grátis" da assinatura). Roxo MANTIDO com semântica própria: badges de status `preparing`/`ready` (7 status pedem 7 cores distintas; demais cores Ionic já ocupadas) e `chip-violet` do ticket médio (azul/verde ocupados, âmbar/vermelho têm semântica de alarme) — light/dark via cores Ionic + override dark existente |
 | `b56e8a8` | 7 | Configurações em abas (`ion-segment` + `?tab=`): **Identidade** (dados/imagens/horários, como antes), **Atendimento** (`MapsPanel`: toggles retirada/entrega/limite-por-raio, raio slider+numero 0,1–100, origem + "usar endereço da loja" que salva sem coords p/ geocodificar no servidor, badge derivada, aviso limpo sem Maps, `geocode_warning`, círculo do raio em CSS + texto — mapa nativo segue fase futura; 403 plano vira upgrade inline, 403 sem plan vira "sem permissão"; após salvar endereço em Identidade, a aba recarrega), **Equipe** (só titular; `TeamPanel` extraído de `TeamPage` e reutilizado na rota `/equipe`) |
+| `64dd18d` | ui | Pedidos: abas de scope legíveis — `ion-segment` (truncava `ABERT...`/`CONC...`/`CANC...`) virado em `tablist` com rolagem horizontal no mobile e distribuição total no desktop; rótulos completos **Aberto, Concluído, Cancelado, Todos** (scopes exatos de `GET /orders`; API sem contadores por scope); `role=tab` + `aria-selected` + foco visível + alvo 44px; contraste auditado light/dark |
+| `54858b6` | ui | Uploads padronizados: **`FileUploader.vue`** em todos os pontos existentes (logo/capa nas settings, imagem no form de produto, galeria no detalhe, logo no admin da loja, comprovante na despesa) — dropzone desktop + toque mobile, preview atual/nova, trocar/remover, progresso real (`api.upload` + `onProgress` via XHR), validação igual ao painel (logo 3 MB, produto 4 MB, capa 5 MB, comprovante JPG/PNG/PDF 5 MB), recorte opcional **CropperJS 1.6.2** (mesma lib/versão do web via npm; logo 800px, produto 1200px, JPEG 0.9, "manter original"; capa/comprovante sem recorte como no painel), 422 por campo, light/dark |
 
 - Stack: `@ionic/vue` 9.0.6, Vue 3.5, Pinia 4, Capacitor 8, Vite 8 · `applicationId` fixo: **`br.com.yzap.app`**
-- `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
+  + `cropperjs` **1.6.2** (exato, mesma versão do painel web) p/ recorte no `FileUploader`- `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
 - Sessão: token em Keychain/Keystore (nunca `localStorage`); `401` derruba a sessão
 - `vue-tsc --noEmit` verde após cada grupo · sem segredos no bundle · builds (`npm run build`/`cap sync`) ficam para a fase de release
 
@@ -53,7 +55,7 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 1. **Backend (para o agente `mobile-api`)**: o PHP (≤8.3) **não parseia `multipart/form-data` em `PUT`** — validado em `PUT /store/settings`. O app contorna enviando escalares em JSON e imagens por multipart só quando o método é POST (produtos: imagem nova vai por `POST /products/{id}/images`). Registrar defeito/possível correção no servidor (ex.: ler `php://input` ou exigir POST + `_method`).
 2. Google Console (mesmo projeto do web): Client ID **Android** p/ `br.com.yzap.app` (SHA-1 debug + release + Play App Signing) e **iOS** (bundle ID); audiência = client web atual; tela de consentimento em produção
 3. Máquina com Android SDK/Xcode: `cap add android/ios`, build nativo, teste ponta a ponta (Google, 401/403, offline, deeplink do MP)
-4. Fases futuras (não implementar por conta própria): Push (FCM/APNs), Maps nativo, fila de escrita offline (hoje só cache de leitura com aviso de dado desatualizado)
+4. Fases futuras (não implementar por conta própria): Push (FCM/APNs), Maps nativo, fila de escrita offline (hoje só cache de leitura com aviso de dado desatualizado), **câmera nativa via SDK Capacitor** (o `FileUploader` usa input de arquivo; captura direta fica para fase com SDK)
 5. Ambiente: Node via nvm no WSL (ver `.nvmrc`); nunca usar os shims do Node Windows em `/mnt/c`
 
 ## Retomada da próxima sessão — prioridade imediata
@@ -61,10 +63,11 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 > Registrado em 2026-10-02. Os itens abaixo foram pedidos, mas **ainda não foram
 > implementados**. Não confundir com as entregas da tabela acima.
 
-1. **Uploads padronizados:** criar componente reutilizável para logo, capa, banners e
-   fotos de produto, com dropzone/touch, preview, trocar/remover, progresso, validação e
-   recorte de imagem. Preservar CropperJS (ou wrapper Vue compatível) e garantir contraste
-   claro/escuro. Não exibir o input de arquivo nativo sem estilização.
+1. ✅ **Uploads padronizados (entregue em `54858b6`):** `FileUploader.vue` reutilizável
+   (logo, capa, fotos de produto, logo no admin, comprovante) com dropzone/touch,
+   preview, trocar/remover, progresso real, validação igual ao painel e recorte
+   CropperJS 1.6.2. Câmera nativa fica para fase com SDK. Banners usam o mesmo
+   componente quando as telas de aparência existirem (gap de API, item 3).
 2. **Configurações iguais ao painel web:** reorganizar a área conforme
    `catalog/admin/partials/settings-tabs.blade.php`: Configurações, Temas, Conexão
    WhatsApp, Banners, Capa e Área de atendimento. Equipe pode permanecer como área
@@ -78,10 +81,9 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
    Sanitização e persistência HTML continuam no servidor; não copiar o CKEditor 4 antigo
    diretamente para o app sem avaliar compatibilidade/licença. Preferência para um editor
    Vue moderno com toolbar responsiva (ex.: TipTap), mantendo o contrato da API.
-5. **Tabs de Pedidos ilegíveis:** no mobile aparecem `ABERT...`, `CONC...`, `CANC...`.
-   Corrigir para rótulos completos e legíveis (Aberto, Concluído, Cancelado, Todos), com
-   scroll horizontal ou distribuição responsiva sem truncar palavras; preservar indicador
-   ativo e acessibilidade.
+5. ✅ **Tabs de Pedidos legíveis (entregue em `64dd18d`):** `tablist` com rolagem
+   horizontal — Aberto, Concluído, Cancelado, Todos — sem truncar, com indicador
+   ativo e acessibilidade. Sem contadores (a API não devolve contagem por scope).
 6. **Fumaça visual obrigatória:** validar em 375px e desktop: tab-bar sempre no rodapé,
    sidebar 232px sem quebra vertical, login legível/centralizado, settings e editor nos dois
    temas. Não fazer build nativo antes dessas correções; o foco da próxima sessão é feature
