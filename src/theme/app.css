@@ -338,6 +338,12 @@ ion-card {
   font-weight: 800;
   color: var(--yz-primary);
 }
+/* Links de texto (nunca `ion-button`): verde da marca no claro. */
+ion-card a:not(.button),
+ion-content p a:not(.button),
+.rich-text a {
+  color: var(--yz-primary);
+}
 .yz-chips {
   display: flex;
   gap: 6px;
@@ -443,6 +449,19 @@ ion-card {
   border-radius: 10px;
 }
 
+/* Badges suaves de status (7 status pedem 7 cores distintas; `preparing` e
+ * `ready` ficam aqui em vez de `secondary`/`tertiary` do Ionic — roxo/índigo
+ * sólido com texto branco não passa contraste AA no dark, e o `secondary`
+ * claro falha até no light). Fundo suave + texto escuro no claro. */
+ion-badge.yz-status-preparing {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+ion-badge.yz-status-ready {
+  background: #fce7f3;
+  color: #be185d;
+}
+
 /* ============================ RESPONSIVO ============================= */
 @media (max-width: 991px) {
   .stat-grid {
@@ -529,16 +548,44 @@ html.ion-palette-dark .avatar-a {
 }
 html.ion-palette-dark .icon-chip.chip-blue {
   background: rgba(37, 99, 235, 0.18);
+  color: #93c5fd;
 }
 html.ion-palette-dark .icon-chip.chip-green {
   background: rgba(22, 163, 74, 0.18);
+  color: #4ade80;
 }
 html.ion-palette-dark .icon-chip.chip-amber {
   background: rgba(180, 83, 9, 0.2);
+  color: #fcd34d;
 }
 html.ion-palette-dark .icon-chip.chip-red {
   background: rgba(220, 38, 38, 0.18);
+  color: #fca5a5;
 }
 html.ion-palette-dark .icon-chip.chip-violet {
   background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+}
+/* Demais textos coloridos auditados: roxo/índigo e verde-escuro da marca
+ * sobre fundo preto falham AA — clarear no dark (fundo translúcido +
+ * texto pastel, contraste 7+:1 ou maior sobre #1c1c1d). */
+html.ion-palette-dark ion-badge.yz-status-preparing {
+  background: rgba(139, 92, 246, 0.22);
+  color: #c4b5fd;
+}
+html.ion-palette-dark ion-badge.yz-status-ready {
+  background: rgba(236, 72, 153, 0.2);
+  color: #f9a8d4;
+}
+html.ion-palette-dark .price {
+  color: #5eead4;
+}
+html.ion-palette-dark ion-card a:not(.button),
+html.ion-palette-dark ion-content p a:not(.button),
+html.ion-palette-dark .rich-text a,
+html.ion-palette-dark .fu-pdf-link {
+  color: #5eead4;
+}
+html.ion-palette-dark .fu-pdf ion-icon {
+  color: #5eead4;
 }

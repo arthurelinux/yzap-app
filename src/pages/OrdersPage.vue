@@ -77,7 +77,7 @@
             <ion-label>
               <h3>
                 #{{ order.number }}
-                <ion-badge :color="statusColor(order.status)">
+                <ion-badge :color="statusColor(order.status)" :class="statusClass(order.status)">
                   {{ order.status_label || STATUS_LABELS[order.status] || order.status }}
                 </ion-badge>
               </h3>
@@ -139,6 +139,7 @@ import {
 } from '@ionic/vue'
 import { ordersApi, ORDER_STATUSES, STATUS_LABELS } from '@/api/orders'
 import { routeApiError } from '@/composables/errors'
+import { statusClass, statusColor } from '@/composables/orderStatus'
 import { useList } from '@/composables/useList'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
@@ -182,27 +183,6 @@ const emptyHint = computed(() => {
   if (scope.value === 'cancelled') return 'Nenhum pedido cancelado.'
   return 'Os pedidos da loja aparecem aqui.'
 })
-
-function statusColor(status?: string): string {
-  switch (status) {
-    case 'received':
-      return 'warning'
-    case 'confirmed':
-      return 'primary'
-    case 'preparing':
-      return 'secondary'
-    case 'ready':
-      return 'tertiary'
-    case 'out_for_delivery':
-      return 'success'
-    case 'completed':
-      return 'medium'
-    case 'cancelled':
-      return 'danger'
-    default:
-      return 'medium'
-  }
-}
 
 function money(value: number): string {
   try {

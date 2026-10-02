@@ -20,7 +20,7 @@
 
       <template v-else>
         <div class="status-current">
-          <ion-badge :color="statusColor(order.status)" class="big">
+          <ion-badge :color="statusColor(order.status)" :class="statusClass(order.status)" class="big">
             {{ order.status_label || (order.status ? STATUS_LABELS[order.status] : '') || order.status || '—' }}
           </ion-badge>
           <span class="muted">{{ dateTime(order.created_at) }}</span>
@@ -135,6 +135,7 @@ import {
   type OrderStatus,
 } from '@/api/orders'
 import { apiMessage, routeApiError } from '@/composables/errors'
+import { statusClass, statusColor } from '@/composables/orderStatus'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
 
@@ -162,27 +163,6 @@ const availableStatuses = computed<OrderStatus[]>(() => {
   if (current !== 'cancelled' && current !== 'completed') out.push('cancelled')
   return out
 })
-
-function statusColor(status?: string): string {
-  switch (status) {
-    case 'received':
-      return 'warning'
-    case 'confirmed':
-      return 'primary'
-    case 'preparing':
-      return 'secondary'
-    case 'ready':
-      return 'tertiary'
-    case 'out_for_delivery':
-      return 'success'
-    case 'completed':
-      return 'medium'
-    case 'cancelled':
-      return 'danger'
-    default:
-      return 'medium'
-  }
-}
 
 function money(value: number): string {
   try {
