@@ -44,15 +44,19 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 | `b56e8a8` | 7 | Configurações em abas (`ion-segment` + `?tab=`): **Identidade** (dados/imagens/horários, como antes), **Atendimento** (`MapsPanel`: toggles retirada/entrega/limite-por-raio, raio slider+numero 0,1–100, origem + "usar endereço da loja" que salva sem coords p/ geocodificar no servidor, badge derivada, aviso limpo sem Maps, `geocode_warning`, círculo do raio em CSS + texto — mapa nativo segue fase futura; 403 plano vira upgrade inline, 403 sem plan vira "sem permissão"; após salvar endereço em Identidade, a aba recarrega), **Equipe** (só titular; `TeamPanel` extraído de `TeamPage` e reutilizado na rota `/equipe`) |
 | `64dd18d` | ui | Pedidos: abas de scope legíveis — `ion-segment` (truncava `ABERT...`/`CONC...`/`CANC...`) virado em `tablist` com rolagem horizontal no mobile e distribuição total no desktop; rótulos completos **Aberto, Concluído, Cancelado, Todos** (scopes exatos de `GET /orders`; API sem contadores por scope); `role=tab` + `aria-selected` + foco visível + alvo 44px; contraste auditado light/dark |
 | `54858b6` | ui | Uploads padronizados: **`FileUploader.vue`** em todos os pontos existentes (logo/capa nas settings, imagem no form de produto, galeria no detalhe, logo no admin da loja, comprovante na despesa) — dropzone desktop + toque mobile, preview atual/nova, trocar/remover, progresso real (`api.upload` + `onProgress` via XHR), validação igual ao painel (logo 3 MB, produto 4 MB, capa 5 MB, comprovante JPG/PNG/PDF 5 MB), recorte opcional **CropperJS 1.6.2** (mesma lib/versão do web via npm; logo 800px, produto 1200px, JPEG 0.9, "manter original"; capa/comprovante sem recorte como no painel), 422 por campo, light/dark |
+| `41078b3` | 8–10 | Settings espelhando o painel (`settings-tabs.blade.php`): abas **Configurações, Temas, WhatsApp, Banners, Capa, Atendimento** (+ Equipe do titular) em `ion-segment` rolável com `?tab=` — `src/api/{appearance,notifications,whatsapp}.ts` (grupos 8–10, zero mock). **Temas**: catálogo + aplicar (422 `food` fora do segmento), custom HTML/CSS 256 KB com mesma validação + checagem de integridade. **Banners**: CRUD + hero via `FileUploader` (5 MB, sem recorte); PUT envia sempre `is_active` (backend booleaniza ausente). **Capa**: upload S3 com checagem de integridade (logo ficou em Configurações — sem duplicar envio). **WhatsApp**: status + `sync-qr` com polling 5s igual ao `whatsapp.js` do painel (pausa oculta, para ao conectar, esconde QR; token nunca exibido) + mensagens automáticas (toggles por status + tags com inserção no cursor). Gating: `store_theme`/`notifications`/`delivery_maps` escondem a aba; 403 de plano vira upgrade inline |
+| `c2562fa` | editor | **Editor rico nos produtos**: `RichTextEditor.vue` (**TipTap 3** MIT: StarterKit H1–H2 + Underline + Link http(s) + Placeholder) no lugar do textarea de `ProductFormPage` (payload inalterado — HTML vai em `description`; demais textareas seguem plain-text como no web). Paridade com a toolbar do CKEditor 4 (`products/form.js` ~l.242: Bold/Italic/Underline/RemoveFormat, listas, títulos, Link/Unlink); barra de link inline (sem `prompt`), botões ≥40px com rolagem, `aria-pressed`, light/dark por vars. Detalhe renderiza via `.rich-text` global (`app.css`); sanitização final no servidor |
 
 - Stack: `@ionic/vue` 9.0.6, Vue 3.5, Pinia 4, Capacitor 8, Vite 8 · `applicationId` fixo: **`br.com.yzap.app`**
-  + `cropperjs` **1.6.2** (exato, mesma versão do painel web) p/ recorte no `FileUploader`- `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
+  + `cropperjs` **1.6.2** (exato, mesma versão do painel web) p/ recorte no `FileUploader`
+  + `@tiptap/{vue-3,starter-kit,extension-underline,extension-link,extension-placeholder}` **^3.31.4** (versão real do registry) p/ o `RichTextEditor` — **pendente `npm install`** (lockfile ainda sem as entradas; typecheck/build na fase de release). Orçamento de bundle: TipTap 3 soma ~150–200 KB ao bundle web (a medir no 1º build da release; sem segredo no bundle — regra mantida)
+- `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
 - Sessão: token em Keychain/Keystore (nunca `localStorage`); `401` derruba a sessão
 - `vue-tsc --noEmit` verde após cada grupo · sem segredos no bundle · builds (`npm run build`/`cap sync`) ficam para a fase de release
 
 ## Pendências
 
-1. **Backend (para o agente `mobile-api`)**: o PHP (≤8.3) **não parseia `multipart/form-data` em `PUT`** — validado em `PUT /store/settings`. O app contorna enviando escalares em JSON e imagens por multipart só quando o método é POST (produtos: imagem nova vai por `POST /products/{id}/images`). Registrar defeito/possível correção no servidor (ex.: ler `php://input` ou exigir POST + `_method`).
+1. **Backend (para o agente `mobile-api`)**: o PHP (≤8.3) **não parseia `multipart/form-data` em `PUT`** — validado em `PUT /store/settings`. O app contorna enviando escalares em JSON e imagens por multipart só quando o método é POST (produtos: imagem nova vai por `POST /products/{id}/images`). Registrar defeito/possível correção no servidor (ex.: ler `php://input` ou exigir POST + `_method`). **Extensão do problema (entregas `41078b3`/`c2562fa`)**: `PUT /appearance/custom` e `PUT /appearance/cover` também são multipart-PUT no contrato — os painéis conferem a resposta (flags `has_html/has_css`, URL da capa) e avisam quando nada mudou, em vez de fingir sucesso.
 2. Google Console (mesmo projeto do web): Client ID **Android** p/ `br.com.yzap.app` (SHA-1 debug + release + Play App Signing) e **iOS** (bundle ID); audiência = client web atual; tela de consentimento em produção
 3. Máquina com Android SDK/Xcode: `cap add android/ios`, build nativo, teste ponta a ponta (Google, 401/403, offline, deeplink do MP)
 4. Fases futuras (não implementar por conta própria): Push (FCM/APNs), Maps nativo, fila de escrita offline (hoje só cache de leitura com aviso de dado desatualizado), **câmera nativa via SDK Capacitor** (o `FileUploader` usa input de arquivo; captura direta fica para fase com SDK)
@@ -68,19 +72,19 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
    preview, trocar/remover, progresso real, validação igual ao painel e recorte
    CropperJS 1.6.2. Câmera nativa fica para fase com SDK. Banners usam o mesmo
    componente quando as telas de aparência existirem (gap de API, item 3).
-2. **Configurações iguais ao painel web:** reorganizar a área conforme
-   `catalog/admin/partials/settings-tabs.blade.php`: Configurações, Temas, Conexão
-   WhatsApp, Banners, Capa e Área de atendimento. Equipe pode permanecer como área
-   própria para o titular. Hoje o app tem somente Identidade/Atendimento/Equipe.
-3. **Gap de API antes do item 2:** criar endpoints mobile para temas, tema customizado,
-   banners/hero, capa, configuração de notificações e WhatsApp/QR. A execução do agente
-   `mobile-api` que faria isso foi interrompida e **não entregou código**.
-4. **Editor rico de produto:** substituir o textarea de descrição por editor Vue
-   touch-friendly, com experiência equivalente ao CKEditor 4 usado no web
-   (`public/ckeditor`, produto usa Bold/Italic/Underline/RemoveFormat/listas etc.).
-   Sanitização e persistência HTML continuam no servidor; não copiar o CKEditor 4 antigo
-   diretamente para o app sem avaliar compatibilidade/licença. Preferência para um editor
-   Vue moderno com toolbar responsiva (ex.: TipTap), mantendo o contrato da API.
+2. ✅ **Configurações iguais ao painel web (entregue em `41078b3`):** `/configurar-loja`
+   nas abas de `settings-tabs.blade.php` (Configurações, Temas, WhatsApp, Banners,
+   Capa, Atendimento + Equipe do titular) sobre os grupos 8–10 do contrato
+   (temas, custom, banners/hero, capa, notificações, WhatsApp/QR). Gating por
+   permissão (aba some) + upgrade inline no 403 de plano.
+3. ~~Gap de API antes do item 2~~ Resolvido: grupos 8–10 documentados no contrato
+   (o agente `mobile-api` entregou `MobileAppearanceController`,
+   `MobileNotificationController` e `MobileWhatsappController`).
+4. ✅ **Editor rico de produto (entregue em `c2562fa`):** `RichTextEditor.vue`
+   (TipTap 3) no lugar do textarea de `ProductFormPage`, com paridade ao CKEditor 4
+   do web e renderização em `ProductDetailPage` (`.rich-text`). Sanitização no
+   servidor; pendente `npm install` + validação light/dark e mobile/desktop na
+   fumaça visual.
 5. ✅ **Tabs de Pedidos legíveis (entregue em `64dd18d`):** `tablist` com rolagem
    horizontal — Aberto, Concluído, Cancelado, Todos — sem truncar, com indicador
    ativo e acessibilidade. Sem contadores (a API não devolve contagem por scope).
