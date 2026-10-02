@@ -264,7 +264,7 @@ onMounted(load)
   padding: 6px 12px;
 }
 .card {
-  background: var(--yz-card);
+  background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
   margin-top: 14px;

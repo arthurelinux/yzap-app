@@ -75,6 +75,28 @@ ion-split-pane {
 ion-tab-bar.mobile-tabs {
   display: none;
 }
+/* Bug #2: sem `ion-tabs` o `slot="bottom"` não fixa nada e a barra subia para
+ * o topo no mobile. Posicionamento fixo inferior + safe-area (spike: Início /
+ * Pedidos / Produtos / Mais sempre grudados no bottom). */
+@media (max-width: 991px) {
+  ion-tab-bar.mobile-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    --background: var(--ion-tab-bar-background);
+    border-top: 1px solid var(--ion-border-color);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Conteúdo não fica escondido atrás da barra fixa. */
+  #main-content ion-content {
+    --padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  ion-tab-bar.mobile-tabs ion-tab-button[selected] {
+    color: var(--ion-color-primary);
+  }
+}
 @media (min-width: 992px) {
   ion-menu-button {
     display: none;
@@ -83,10 +105,21 @@ ion-tab-bar.mobile-tabs {
 
 /* ============================== TOPBAR =============================== */
 ion-toolbar.topbar {
-  --background: #fff;
+  --background: var(--ion-toolbar-background);
 }
 ion-popover.top-pop {
   --width: 320px;
+}
+/* Todo item herda a cor de texto do tema (nada de label branco fixo no claro,
+ * nada de cinza-escuro no escuro — auditoria de contraste bug #3). */
+ion-item {
+  --color: var(--ion-text-color);
+}
+ion-input,
+ion-textarea,
+ion-label,
+ion-note {
+  color: var(--ion-text-color);
 }
 .notif-dot {
   width: 8px;
@@ -109,6 +142,7 @@ ion-popover.top-pop {
   font-size: 1.15rem;
   font-weight: 800;
   white-space: nowrap;
+  color: var(--ion-text-color);
 }
 .page-sub {
   color: #8a93a3;
@@ -139,7 +173,7 @@ ion-card {
   padding: 22px;
 }
 .stat-label {
-  color: #6b7280;
+  color: var(--yz-muted);
   font-size: 0.85rem;
   margin: 0 0 4px;
 }
@@ -147,7 +181,7 @@ ion-card {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
-  color: #111827;
+  color: var(--ion-text-color);
 }
 .stat-num.small {
   font-size: 1.1rem;
@@ -194,6 +228,7 @@ ion-card {
   margin: 0 0 10px;
   font-size: 1.15rem;
   font-weight: 700;
+  color: var(--ion-text-color);
 }
 .card-subtitle {
   margin: 0 0 10px;
@@ -396,6 +431,11 @@ html.ion-palette-dark .menu-item ion-icon {
 }
 html.ion-palette-dark .menu-item.active {
   background: rgba(8, 127, 111, 0.22);
+  color: #6ee7c8;
+  border-color: rgba(14, 160, 113, 0.5);
+}
+html.ion-palette-dark .menu-item.active ion-icon {
+  color: #6ee7c8;
 }
 html.ion-palette-dark .menu-sec {
   color: #64748b;
@@ -404,6 +444,10 @@ html.ion-palette-dark .stat-num {
   color: #f1f5f9;
 }
 html.ion-palette-dark .yz-logo img {
+  filter: brightness(0) invert(1);
+}
+/* Wordmark do login (fora do sidebar): mesma inversão do spike no dark. */
+html.ion-palette-dark .login-logo {
   filter: brightness(0) invert(1);
 }
 html.ion-palette-dark .url-row ion-input {

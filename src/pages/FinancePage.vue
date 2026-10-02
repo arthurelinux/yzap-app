@@ -398,7 +398,7 @@ watch([from, to], scheduleCashflow)
   color: var(--yz-muted);
 }
 .card {
-  background: var(--yz-card);
+  background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
 }

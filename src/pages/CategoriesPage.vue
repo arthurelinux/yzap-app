@@ -253,7 +253,7 @@ onMounted(load)
 
 <style scoped>
 .card {
-  background: var(--yz-card);
+  background: var(--ion-card-background);
   border-radius: 13px;
   overflow: hidden;
 }

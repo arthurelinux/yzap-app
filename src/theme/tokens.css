@@ -44,8 +44,16 @@
 }
 
 /* Escuro: manter a identidade YZap (o spike mantém primary verde no dark;
- * seletores `html.ion-palette-dark` vencem o dark.class.css por especificidade). */
+ * seletores `html.ion-palette-dark` vencem o dark.class.css por especificidade).
+ * Auditoria de contraste (bug #3): nenhum texto fixo claro no fundo claro, nenhum
+ * texto escuro no fundo escuro. Todo texto usa --ion-text-color / --yz-muted,
+ * ambos redefinidos por tema. --yz-bg acompanha o fundo do Ionic. --yz-card é
+ * alias de --ion-card-background (nunca undefined). */
 html.ion-palette-dark {
+  --ion-background-color: #121212;
+  --ion-background-color-rgb: 18, 18, 18;
+  --ion-text-color: #e8eef0;
+  --ion-text-color-rgb: 232, 238, 240;
   --ion-color-primary: #087f6f;
   --ion-color-primary-rgb: 8, 127, 111;
   --ion-color-primary-shade: #075e54;
@@ -57,6 +65,16 @@ html.ion-palette-dark {
   --ion-toolbar-background: #1c1c1d;
   --ion-tab-bar-background: #1c1c1d;
   --ion-border-color: #2b2b2d;
+  --yz-ink: #e8eef0;
+  --yz-muted: #9aa3b2;
+  --yz-mint: rgba(8, 127, 111, 0.22);
+  --yz-mist: #2b2b2d;
+  --yz-bg: #121212;
+  --yz-card: var(--ion-card-background);
   --yz-card-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
-  --yz-mist: #33413d;
+}
+
+/* Alias claro (sempre definido): páginas usam --yz-card sem cair em transparente. */
+:root {
+  --yz-card: var(--ion-card-background);
 }

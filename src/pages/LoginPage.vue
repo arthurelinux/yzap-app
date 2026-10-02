@@ -135,9 +135,16 @@ async function onGoogleLogin() {
 .login-bg {
   --background: var(--yz-bg);
 }
+/* Bug #3: labels/título herdavam branco fixo do tema escuro sobre fundo claro
+ * (ou o inverso). Amarra tudo às vars por tema. */
 .login-wrap {
   max-width: 420px;
   margin: 8vh auto 0;
+  color: var(--ion-text-color);
+}
+.login-wrap ion-item {
+  --background: transparent;
+  --color: var(--ion-text-color);
 }
 .login-logo {
   height: 34px;

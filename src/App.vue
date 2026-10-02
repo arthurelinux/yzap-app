@@ -39,12 +39,13 @@
             v-for="tab in tabs"
             :key="tab.path"
             :tab="tab.label"
+            :selected="route.path === tab.path || route.path.startsWith(`${tab.path}/`)"
             @click="goTab(tab.path)"
           >
             <ion-icon :name="tab.icon"></ion-icon>
             <ion-label>{{ tab.label }}</ion-label>
           </ion-tab-button>
-          <ion-tab-button tab="mais" @click="openMenu">
+          <ion-tab-button tab="mais" :selected="false" @click="openMenu">
             <ion-icon name="menu-outline"></ion-icon>
             <ion-label>Mais</ion-label>
           </ion-tab-button>

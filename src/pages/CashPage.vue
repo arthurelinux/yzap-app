@@ -340,7 +340,7 @@ onMounted(load)
 
 <style scoped>
 .panel-card {
-  background: var(--yz-card);
+  background: var(--ion-card-background);
 }
 .breakdown {
   margin-top: 10px;

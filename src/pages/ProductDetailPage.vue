@@ -353,7 +353,7 @@ onMounted(load)
 .hero {
   border-radius: 13px;
   overflow: hidden;
-  background: var(--yz-card);
+  background: var(--ion-card-background);
   margin-bottom: 14px;
 }
 .hero-img {
@@ -381,7 +381,7 @@ onMounted(load)
   white-space: pre-wrap;
 }
 .panel-card {
-  background: var(--yz-card);
+  background: var(--ion-card-background);
 }
 .img-grid {
   display: grid;
