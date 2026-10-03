@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // Reportado: br.com.yzap.app
 const config: CapacitorConfig = {
   appId: 'br.com.yzap.app',
-  appName: 'YZap Lojista',
+  appName: 'Yzap',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

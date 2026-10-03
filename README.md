@@ -1,4 +1,4 @@
-# YZap App — app do lojista
+# Yzap
 
 App de gestão da loja pelo celular (Ionic 9 + Vue 3.5 + Capacitor 8).
 **Não implementa backend**: consome SOMENTE o que está documentado em
@@ -33,8 +33,22 @@ bundle (`APP_KEY`, `MERCADO_PAGO_*`, `EVOLUTION_*`, `GOOGLE_CLIENT_SECRET`, AWS)
 
 - `src/assets/horizontal.png` — wordmark do cabeçalho/menu, copiada de
   `public/images/horizontal.png` do repo Laravel.
-- `src/assets/yz-mark-source.png` — marca de origem do ícone/splash, copiada de
-  `public/images/yz-mark-source.png` do repo Laravel.
+- `src/assets/yz-mark-source.png` — marca de origem, copiada de
+  `public/images/yz-mark-source.png` do repo Laravel (mantida como arte
+  auxiliar; **não** é o ícone do app).
+- Ícone do app (favicon oficial, copiado de
+  `public/images/favicon/` do repo Laravel em 2026-10-03):
+  `src/assets/favicon-32x32.png` (32×32), `src/assets/favicon-16x16.png`
+  (16×16), `src/assets/apple-touch-icon.png` (180×180 — no repo Laravel o
+  arquivo chama-se `apple-touch-icon.png`, sem a dimensão no nome),
+  `src/assets/android-chrome-192x192.png` (192×192),
+  `src/assets/android-chrome-512x512.png` (512×512). Referenciados em
+  `index.html` (`rel="icon"` 16/32 + `apple-touch-icon`).
+  Gap registrado: o set oficial vai até 512×512 — falta master de alta
+  resolução para gerar ícone adaptativo/splash das plataformas
+  (ex.: 1024px p/ `@capacitor/assets`, splash 2732px); gerar nativo
+  (`cap add android/ios` + assets) fica para a fase com máquina/SDK, sem
+  improvisar com outra arte.
 - `src/theme/tokens.css` — tokens YZap (`#087f6f`, `#075e54`, `#10221f`,
   `#58706b`, `#dcf8ef`, `#dbe9e5`, `#f7fbfa`; Manrope 400–800; raios 10/13/18/99px).
   `accent_color` da loja aplicado em runtime.

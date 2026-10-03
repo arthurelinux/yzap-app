@@ -1,13 +1,13 @@
-# YZap Mobile — estado atual
+# Yzap — estado atual
 
-> Última atualização: 2026-10-02 · Branch API: `mobile/api-lojista` · App: `main`
+> Última atualização: 2026-10-03 · Branch API: `mobile/api-lojista` · App: `main`
 
 ## Repositórios
 
 | Projeto | Local | Repo/branch | Papel |
 |---|---|---|---|
 | API (Laravel 13, PHP 8.3) | `/home/arthur/acessodesign/yzap` | `mobile/api-lojista` → PR para `develop` | Serve o app; web inalterado |
-| App (Ionic 9 + Vue 3.5 + Capacitor 8) | `/home/arthur/acessodesign/yzap-app` | `main` | Lojista no celular; repo próprio |
+| App (Ionic 9 + Vue 3.5 + Capacitor 8) | `/home/arthur/acessodesign/yzap-app` | `main` | Gestão da loja pelo celular; repo próprio |
 
 Ordem de merge: API primeiro (`mobile/api-lojista` → `develop`), depois app (`fase/*` → `main`).
 
@@ -59,6 +59,23 @@ Nenhuma tela de placeholder existe: sem API, a rota simplesmente não existe
 - `.env`: `VITE_API_URL=https://yzap.com.br/api/mobile/v1` · `VITE_GOOGLE_CLIENT_ID` vazio (aguardando clients)
 - Sessão: token em Keychain/Keystore (nunca `localStorage`); `401` derruba a sessão
 - `vue-tsc --noEmit` verde após cada grupo · sem segredos no bundle · builds (`npm run build`/`cap sync`) ficam para a fase de release
+
+## Nome e ícone (2026-10-03)
+
+- App passa a se chamar apenas **Yzap**: `capacitor.config.ts` (`appName`),
+  `index.html` (`<title>`), `package.json` (`description`), `README.md`,
+  `STATUS.md` e comentário do `FileUploader` sem "lojista". Referências ao
+  branch `mobile/api-lojista` mantidas (nome de branch da API, não do app).
+- Ícone = **favicon oficial** do repo Laravel (`public/images/favicon/` →
+  `src/assets/`, nomes originais preservados): `favicon-16x16.png` (16×16),
+  `favicon-32x32.png` (32×32), `apple-touch-icon.png` (**180×180** verificado —
+  no Laravel o arquivo não traz a dimensão no nome), `android-chrome-192x192.png`,
+  `android-chrome-512x512.png`. `index.html` referencia 16/32 (`rel="icon"`) +
+  `apple-touch-icon`. `yz-mark-source.png` segue no repo só como arte auxiliar.
+- Gap (sem improvisar outra arte): set oficial vai até 512×512 — sem master p/
+  ícone adaptativo/splash (1024px `@capacitor/assets`, splash 2732px) nem
+  projetos nativos (`cap add android/ios`); geração fica p/ fase com SDK.
+- Sem build/`cap sync` nesta mudança (validação na release).
 
 ## Pendências
 

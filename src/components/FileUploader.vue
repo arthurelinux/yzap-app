@@ -1,4 +1,4 @@
-<!-- FileUploader — upload padronizado do app do lojista (logo, capa, banners,
+<!-- FileUploader — upload padronizado do app (logo, capa, banners,
   - fotos de produto e comprovantes).
   -
   - Padrão vindo do painel web (repo Laravel irmão):

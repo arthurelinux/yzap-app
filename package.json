@@ -2,7 +2,7 @@
   "name": "yzap-app",
   "version": "0.1.0",
   "private": true,
-  "description": "App do lojista YZap — gestão da loja pelo celular (Ionic + Vue + Capacitor). Consome a API mobile do repo Laravel irmão (yzap).",
+  "description": "Yzap — gestão da loja pelo celular (Ionic + Vue + Capacitor). Consome a API mobile do repo Laravel irmão (yzap).",
   "type": "module",
   "scripts": {
     "dev": "vite",
