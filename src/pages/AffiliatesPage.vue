@@ -64,6 +64,136 @@
           </ion-card>
         </div>
 
+        <!-- Dados para recebimento (PUT /affiliates/payout, contrato § grupo 11
+          — só `auth`, sem `active`, como o GET). O GET traz os sensíveis
+          MASCARADOS (**** + últimos dígitos) — o form pré-preenche marcando a
+          proteção; a confirmação do PUT nunca exibe dado sensível. -->
+        <ion-card class="panel-card">
+          <ion-card-content>
+            <div class="row-between">
+              <h2>Dados para recebimento</h2>
+              <ion-badge :color="payout?.configured ? 'success' : 'warning'">
+                {{ payout?.configured ? 'Cadastrados' : 'Pendente' }}
+              </ion-badge>
+            </div>
+            <p class="muted payout-note">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              <span>
+                Documento, chave Pix, agência, conta e dígito aparecem protegidos
+                (****). Para alterar, apague o campo e digite o valor completo —
+                o dado real nunca é exibido aqui.
+              </span>
+            </p>
+
+            <div v-if="payoutSaved" class="payout-ok" role="status">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <p>{{ payoutSaved }}</p>
+            </div>
+
+            <form @submit.prevent="savePayout">
+              <div class="yz-form-grid">
+                <ion-item lines="full" class="yz-field full">
+                  <ion-input
+                    v-model="payoutForm.holder"
+                    label="Titular da conta"
+                    label-placement="floating"
+                    autocomplete="name"
+                    @ionInput="payoutDirty = true"
+                  />
+                  <p v-if="perr('holder')" class="err-text">{{ perr('holder') }}</p>
+                </ion-item>
+
+                <ion-item lines="full" class="yz-field full">
+                  <ion-input
+                    :value="payoutForm.document"
+                    label="CPF/CNPJ do titular"
+                    label-placement="floating"
+                    inputmode="numeric"
+                    @ionInput="onDocumentInput($event)"
+                  />
+                  <p v-if="perr('document')" class="err-text">{{ perr('document') }}</p>
+                </ion-item>
+
+                <ion-item lines="full" class="yz-field full">
+                  <ion-select
+                    v-model="payoutForm.pix_key_type"
+                    label="Tipo de chave Pix"
+                    label-placement="floating"
+                    interface="popover"
+                    @ionChange="onPixTypeChange"
+                  >
+                    <ion-select-option value="cpf">CPF</ion-select-option>
+                    <ion-select-option value="cnpj">CNPJ</ion-select-option>
+                    <ion-select-option value="email">E-mail</ion-select-option>
+                    <ion-select-option value="phone">Celular</ion-select-option>
+                    <ion-select-option value="random">Aleatória</ion-select-option>
+                  </ion-select>
+                  <p v-if="perr('pix_key_type')" class="err-text">{{ perr('pix_key_type') }}</p>
+                </ion-item>
+
+                <ion-item lines="full" class="yz-field full">
+                  <ion-input
+                    :value="payoutForm.pix_key"
+                    :label="pixKeyLabel"
+                    label-placement="floating"
+                    :inputmode="pixKeyInputMode"
+                    @ionInput="onPixKeyInput($event)"
+                  />
+                  <p class="hint">{{ pixKeyHint }}</p>
+                  <p v-if="perr('pix_key')" class="err-text">{{ perr('pix_key') }}</p>
+                </ion-item>
+
+                <ion-item lines="full" class="yz-field full">
+                  <ion-input
+                    v-model="payoutForm.bank"
+                    label="Banco"
+                    label-placement="floating"
+                    @ionInput="payoutDirty = true"
+                  />
+                  <p v-if="perr('bank')" class="err-text">{{ perr('bank') }}</p>
+                </ion-item>
+
+                <ion-item lines="full" class="yz-field">
+                  <ion-input
+                    v-model="payoutForm.branch"
+                    label="Agência"
+                    label-placement="floating"
+                    inputmode="numeric"
+                    @ionInput="payoutDirty = true"
+                  />
+                  <p v-if="perr('branch')" class="err-text">{{ perr('branch') }}</p>
+                </ion-item>
+                <ion-item lines="full" class="yz-field">
+                  <ion-input
+                    v-model="payoutForm.account"
+                    label="Conta"
+                    label-placement="floating"
+                    inputmode="numeric"
+                    @ionInput="payoutDirty = true"
+                  />
+                  <p v-if="perr('account')" class="err-text">{{ perr('account') }}</p>
+                </ion-item>
+                <ion-item lines="full" class="yz-field">
+                  <ion-input
+                    v-model="payoutForm.account_digit"
+                    label="Dígito (se houver)"
+                    label-placement="floating"
+                    inputmode="numeric"
+                    :maxlength="5"
+                    @ionInput="payoutDirty = true"
+                  />
+                  <p v-if="perr('account_digit')" class="err-text">{{ perr('account_digit') }}</p>
+                </ion-item>
+              </div>
+
+              <p v-if="payoutError" class="err-text">{{ payoutError }}</p>
+              <ion-button expand="block" type="submit" :disabled="payoutSaving">
+                {{ payoutSaving ? 'Salvando…' : 'Salvar dados de recebimento' }}
+              </ion-button>
+            </form>
+          </ion-card-content>
+        </ion-card>
+
         <!-- Como funciona: regras vindas da API (espelham a lista "Regras do
           programa" de `affiliates/index.blade.php` via `AffiliateProgramContent`). -->
         <ion-card v-if="header.how_it_works?.length" class="panel-card">
@@ -138,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   IonBadge,
@@ -157,11 +287,19 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonText,
   IonToast,
 } from '@ionic/vue'
-import { affiliatesApi, type AffiliatePage, type Referral, type ReferralStatus } from '@/api/affiliates'
+import {
+  affiliatesApi,
+  type AffiliatePage,
+  type PixKeyType,
+  type Referral,
+  type ReferralStatus,
+} from '@/api/affiliates'
 import { apiMessage, routeApiError } from '@/composables/errors'
 import { useList } from '@/composables/useList'
 import AppBar from '@/components/AppBar.vue'
@@ -183,6 +321,245 @@ const list = useList((page: number) =>
     return { data: res.data.referrals ?? [], meta: res.meta }
   }),
 )
+
+/* ---------------- Dados para recebimento (PUT /affiliates/payout) --------
+ * Espelha `AffiliatePayoutService::validate` (mesmos campos/validações e
+ * mensagens do painel). Pré-preenche com os valores MASCARADOS do GET;
+ * campo ainda mascarado (com `*`) nunca é enviado — pede o valor completo. */
+
+const payout = computed(() => header.value?.payout ?? null)
+
+const payoutForm = reactive({
+  holder: '',
+  document: '',
+  pix_key_type: 'cpf' as PixKeyType,
+  pix_key: '',
+  bank: '',
+  branch: '',
+  account: '',
+  account_digit: '',
+})
+const payoutErrors = ref<Record<string, string>>({})
+const payoutError = ref('')
+const payoutSaving = ref(false)
+const payoutSaved = ref('')
+let payoutDirty = false
+
+function perr(key: string): string | null {
+  return payoutErrors.value[key] ?? null
+}
+
+const onlyDigits = (value: string): string => value.replace(/\D/g, '')
+
+function formatCpf(digits: string): string {
+  return digits
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
+function formatCnpj(digits: string): string {
+  return digits
+    .slice(0, 14)
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2')
+}
+
+function formatDocument(digits: string): string {
+  const d = digits.slice(0, 14)
+  return d.length > 11 ? formatCnpj(d) : formatCpf(d)
+}
+
+const pixKeyLabel = computed(() => {
+  switch (payoutForm.pix_key_type) {
+    case 'cpf':
+      return 'Chave Pix (CPF)'
+    case 'cnpj':
+      return 'Chave Pix (CNPJ)'
+    case 'email':
+      return 'Chave Pix (e-mail)'
+    case 'phone':
+      return 'Chave Pix (celular com DDD)'
+    default:
+      return 'Chave Pix (aleatória)'
+  }
+})
+
+const pixKeyHint = computed(() => {
+  switch (payoutForm.pix_key_type) {
+    case 'cpf':
+      return 'CPF com 11 dígitos (só números).'
+    case 'cnpj':
+      return 'CNPJ com 14 dígitos (só números).'
+    case 'email':
+      return 'E-mail válido.'
+    case 'phone':
+      return 'DDD + número, de 10 a 13 dígitos.'
+    default:
+      return 'UUID da chave aleatória.'
+  }
+})
+
+const pixKeyInputMode = computed(() =>
+  payoutForm.pix_key_type === 'email' || payoutForm.pix_key_type === 'random'
+    ? 'text'
+    : 'numeric',
+)
+
+function onDocumentInput(event: CustomEvent) {
+  payoutDirty = true
+  const raw = String((event as CustomEvent<{ value?: string | number }>).detail?.value ?? '')
+  if (raw.includes('*')) {
+    // Valor mascarado em edição: deixa digitar por cima sem formatar.
+    payoutForm.document = raw
+    return
+  }
+  payoutForm.document = formatDocument(onlyDigits(raw))
+}
+
+function onPixKeyInput(event: CustomEvent) {
+  payoutDirty = true
+  const raw = String((event as CustomEvent<{ value?: string | number }>).detail?.value ?? '')
+  const type = payoutForm.pix_key_type
+  if (raw.includes('*') || type === 'email' || type === 'random') {
+    payoutForm.pix_key = type === 'email' || type === 'random' ? raw.trimStart() : raw
+    return
+  }
+  const digits = onlyDigits(raw)
+  if (type === 'cpf') payoutForm.pix_key = formatCpf(digits)
+  else if (type === 'cnpj') payoutForm.pix_key = formatCnpj(digits)
+  else payoutForm.pix_key = digits.slice(0, 13)
+}
+
+function onPixTypeChange() {
+  payoutDirty = true
+  payoutErrors.value = {}
+  // Mascarado pertence ao tipo antigo — limpa para não validar errado.
+  if (payoutForm.pix_key.includes('*')) payoutForm.pix_key = ''
+}
+
+/** Pré-preenche com o GET (mascarados como vêm); pula quando o usuário já
+ * está editando, para o pull-to-refresh não apagar a digitação. */
+function hydratePayout(force = false) {
+  if (payoutDirty && !force) return
+  const p = header.value?.payout
+  payoutForm.holder = p?.holder ?? ''
+  payoutForm.document = p?.document ?? ''
+  const pixType = p?.pix_key_type
+  if (
+    pixType === 'cpf' ||
+    pixType === 'cnpj' ||
+    pixType === 'email' ||
+    pixType === 'phone' ||
+    pixType === 'random'
+  ) {
+    payoutForm.pix_key_type = pixType
+  }
+  payoutForm.pix_key = p?.pix_key ?? ''
+  payoutForm.bank = p?.bank ?? ''
+  payoutForm.branch = p?.branch ?? ''
+  payoutForm.account = p?.account ?? ''
+  payoutForm.account_digit = p?.account_digit ?? ''
+  payoutDirty = false
+}
+
+/** Validação cliente espelhando os 422 do `AffiliatePayoutService`. */
+function validatePayout(): boolean {
+  const errs: Record<string, string> = {}
+  if (!payoutForm.holder.trim()) errs.holder = 'Informe o nome do titular.'
+  if (payoutForm.document.includes('*')) {
+    errs.document = 'Por segurança, digite o CPF/CNPJ completo para atualizar.'
+  } else if (![11, 14].includes(onlyDigits(payoutForm.document).length)) {
+    errs.document = 'Informe um CPF ou CNPJ válido do titular.'
+  }
+  const type = payoutForm.pix_key_type
+  if (payoutForm.pix_key.includes('*')) {
+    errs.pix_key = 'Por segurança, digite a chave Pix completa para atualizar.'
+  } else {
+    const key =
+      type === 'cpf' || type === 'cnpj' || type === 'phone'
+        ? onlyDigits(payoutForm.pix_key)
+        : payoutForm.pix_key.trim()
+    const ok =
+      type === 'cpf'
+        ? /^\d{11}$/.test(key)
+        : type === 'cnpj'
+          ? /^\d{14}$/.test(key)
+          : type === 'email'
+            ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key)
+            : type === 'phone'
+              ? /^\d{10,13}$/.test(key)
+              : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key)
+    if (!ok) errs.pix_key = 'A chave PIX não corresponde ao tipo selecionado.'
+  }
+  if (!payoutForm.bank.trim()) errs.bank = 'Informe o banco.'
+  if (payoutForm.branch.includes('*')) {
+    errs.branch = 'Por segurança, digite a agência completa para atualizar.'
+  } else if (!payoutForm.branch.trim()) {
+    errs.branch = 'Informe a agência.'
+  }
+  if (payoutForm.account.includes('*')) {
+    errs.account = 'Por segurança, digite a conta completa para atualizar.'
+  } else if (!payoutForm.account.trim()) {
+    errs.account = 'Informe a conta.'
+  }
+  if (payoutForm.account_digit.includes('*')) {
+    errs.account_digit = 'Por segurança, digite o dígito para atualizar (ou apague).'
+  }
+  payoutErrors.value = errs
+  return Object.keys(errs).length === 0
+}
+
+/** `affiliate_payout_*` do 422 → nomes locais do form. */
+function mapPayoutErrors(server: Record<string, string[]>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [key, messages] of Object.entries(server)) {
+    const local = key.startsWith('affiliate_payout_') ? key.slice('affiliate_payout_'.length) : key
+    if (messages?.[0]) out[local] = messages[0]
+  }
+  return out
+}
+
+async function savePayout() {
+  payoutSaved.value = ''
+  payoutError.value = ''
+  payoutErrors.value = {}
+  if (!validatePayout()) {
+    payoutError.value = 'Confira os campos destacados.'
+    return
+  }
+  payoutSaving.value = true
+  try {
+    const type = payoutForm.pix_key_type
+    const { data } = await affiliatesApi.updatePayout({
+      affiliate_payout_holder: payoutForm.holder.trim(),
+      affiliate_payout_document: onlyDigits(payoutForm.document),
+      affiliate_payout_pix_key_type: type,
+      affiliate_payout_pix_key:
+        type === 'cpf' || type === 'cnpj' || type === 'phone'
+          ? onlyDigits(payoutForm.pix_key)
+          : payoutForm.pix_key.trim(),
+      affiliate_payout_bank: payoutForm.bank.trim(),
+      affiliate_payout_branch: payoutForm.branch.trim(),
+      affiliate_payout_account: payoutForm.account.trim(),
+      affiliate_payout_account_digit: payoutForm.account_digit.trim() === '' ? null : payoutForm.account_digit.trim(),
+    })
+    // Confirmação SEM ecoar dado sensível — só a mensagem do servidor.
+    payoutSaved.value = data.message || 'Dados para recebimento atualizados.'
+    payoutDirty = false
+    await list.refresh()
+    hydratePayout(true)
+  } catch (e: unknown) {
+    if (await routeApiError(e, router)) return
+    payoutErrors.value = mapPayoutErrors(fieldErrors(e))
+    payoutError.value = apiMessage(e)
+  } finally {
+    payoutSaving.value = false
+  }
+}
 
 const statCards = computed(() => {
   const s = header.value?.stats
@@ -307,6 +684,7 @@ async function load() {
   loadError.value = ''
   try {
     await list.refresh()
+    hydratePayout()
   } catch (e: unknown) {
     // Grupo 11 é só `auth` (sem `active`): conta inativa acompanha aqui —
     // NUNCA redireciona para /renovar. 401/403 roteiam pelo padrão.
@@ -372,6 +750,38 @@ onMounted(load)
 }
 .rules strong {
   font-weight: 800;
+}
+/* Dados para recebimento: texto e confirmação usam vars do tema
+ * (light/dark auditado — sem cor fixa). */
+.payout-note {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+.payout-note ion-icon {
+  flex: none;
+  margin-top: 2px;
+}
+.payout-ok {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  border: 1px solid var(--ion-color-success);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  color: var(--ion-text-color);
+  font-size: 0.88rem;
+}
+.payout-ok ion-icon {
+  flex: none;
+  font-size: 1.3rem;
+  color: var(--ion-color-success);
+}
+.payout-ok p {
+  margin: 2px 0;
 }
 @media (max-width: 991px) {
   .aff-stats {
