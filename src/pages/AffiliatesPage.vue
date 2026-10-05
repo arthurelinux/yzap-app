@@ -98,7 +98,7 @@
                     label="Titular da conta"
                     label-placement="floating"
                     autocomplete="name"
-                    @ionInput="payoutDirty = true"
+                    @ionInput="markPayoutDirty"
                   />
                   <p v-if="perr('holder')" class="err-text">{{ perr('holder') }}</p>
                 </ion-item>
@@ -148,7 +148,7 @@
                     v-model="payoutForm.bank"
                     label="Banco"
                     label-placement="floating"
-                    @ionInput="payoutDirty = true"
+                    @ionInput="markPayoutDirty"
                   />
                   <p v-if="perr('bank')" class="err-text">{{ perr('bank') }}</p>
                 </ion-item>
@@ -159,7 +159,7 @@
                     label="Agência"
                     label-placement="floating"
                     inputmode="numeric"
-                    @ionInput="payoutDirty = true"
+                    @ionInput="markPayoutDirty"
                   />
                   <p v-if="perr('branch')" class="err-text">{{ perr('branch') }}</p>
                 </ion-item>
@@ -169,7 +169,7 @@
                     label="Conta"
                     label-placement="floating"
                     inputmode="numeric"
-                    @ionInput="payoutDirty = true"
+                    @ionInput="markPayoutDirty"
                   />
                   <p v-if="perr('account')" class="err-text">{{ perr('account') }}</p>
                 </ion-item>
@@ -180,7 +180,7 @@
                     label-placement="floating"
                     inputmode="numeric"
                     :maxlength="5"
-                    @ionInput="payoutDirty = true"
+                    @ionInput="markPayoutDirty"
                   />
                   <p v-if="perr('account_digit')" class="err-text">{{ perr('account_digit') }}</p>
                 </ion-item>
@@ -300,7 +300,7 @@ import {
   type Referral,
   type ReferralStatus,
 } from '@/api/affiliates'
-import { apiMessage, routeApiError } from '@/composables/errors'
+import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import { useList } from '@/composables/useList'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
@@ -343,7 +343,7 @@ const payoutErrors = ref<Record<string, string>>({})
 const payoutError = ref('')
 const payoutSaving = ref(false)
 const payoutSaved = ref('')
-let payoutDirty = false
+let payoutDirty: boolean = false
 
 function perr(key: string): string | null {
   return payoutErrors.value[key] ?? null
@@ -439,6 +439,12 @@ function onPixTypeChange() {
   payoutErrors.value = {}
   // Mascarado pertence ao tipo antigo — limpa para não validar errado.
   if (payoutForm.pix_key.includes('*')) payoutForm.pix_key = ''
+}
+
+/** Marca o form como editado (handler dos campos simples — evita atribuição
+ * inline no template, que o vue-tsc estreita para o literal `false`). */
+function markPayoutDirty() {
+  payoutDirty = true
 }
 
 /** Pré-preenche com o GET (mascarados como vêm); pula quando o usuário já
