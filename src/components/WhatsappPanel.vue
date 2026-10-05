@@ -341,7 +341,7 @@ onUnmounted(() => {
 <style scoped>
 .upgrade .big {
   font-size: 3rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   margin-top: 12px;
 }
 .guide {
@@ -374,11 +374,13 @@ onUnmounted(() => {
   padding: 10px 12px;
   border-radius: var(--yz-radius-sm);
   background: rgba(8, 127, 111, 0.1);
+  background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
   border: 1px solid rgba(8, 127, 111, 0.35);
+  border-color: color-mix(in srgb, var(--ion-color-primary) 35%, transparent);
 }
 .connected-note ion-icon {
   font-size: 1.3rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   flex: none;
 }
 .connected-note p {

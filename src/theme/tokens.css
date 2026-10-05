@@ -1,7 +1,14 @@
 /* Tokens YZap — origem: gabarito `resources/views/preview/ionic.blade.php`
  * do repo Laravel irmão + seção 4 do agente mobile-front.
- * Fonte: Manrope 400–800. Respeitar `accent_color` por loja (aplicado em
- * runtime via `--yz-accent` quando a loja define cor própria).
+ * Fonte: Manrope 400–800. Respeitar `accent_color` por loja: a fonte única
+ * é `src/composables/useStoreTheme.ts` (ativado no `App.vue`), que valida
+ * (`^#[0-9A-Fa-f]{6}$`, fallback `#087f6f` — mesma regra do painel) e grava
+ * `--yz-accent` + `--ion-color-primary` completo no `<html>`.
+ * Regra de uso: cor sólida/brand da loja → `var(--yz-accent)` ou
+ * `var(--ion-color-primary)`; TEXTO na cor da loja sobre superfícies →
+ * `var(--yz-accent-ink)` (clareia no escuro); texto SOBRE primary sólido →
+ * `var(--ion-color-primary-contrast)`; fundo suave tingido → `var(--yz-mint)`
+ * (derivado do accent via `color-mix`, com fallback estático).
  *
  * Tema claro padrão IDÊNTICO ao spike: fundo #f3f4fa, cards brancos,
  * raios 16px, sombras suaves (ver theme/app.css). */
@@ -39,8 +46,14 @@
   --yz-card-radius: 16px;
   --yz-card-shadow: 0 2px 14px rgba(16, 34, 31, 0.05);
 
-  /* Cor de destaque da loja (GET /store → accent_color). Sobrescrita em runtime. */
+  /* Cor de destaque da loja (GET /store → accent_color). Sobrescrita em runtime
+   * por `useStoreTheme` (validada, com `--ion-color-primary` completo). */
   --yz-accent: var(--yz-primary);
+  /* Texto NA cor da loja sobre superfícies: igual ao accent no claro. */
+  --yz-accent-ink: var(--yz-accent);
+  /* Fundo suave tingido da loja: acompanha o accent (fallback = mint do spike). */
+  --yz-mint: #dcf8ef;
+  --yz-mint: color-mix(in srgb, var(--yz-accent) 14%, #ffffff);
 
   /* Altura real da tab-bar mobile (ícone 22px + margens + label + paddings ≈
    * 57–60px + border 1px; 64px é o teto conservador medido no Ionic 9) e folga
@@ -74,6 +87,11 @@ html.ion-palette-dark {
   --yz-ink: #e8eef0;
   --yz-muted: #9aa3b2;
   --yz-mint: rgba(8, 127, 111, 0.22);
+  --yz-mint: color-mix(in srgb, var(--yz-accent) 22%, transparent);
+  /* Texto na cor da loja no escuro: clareado p/ contraste AA sobre #1c1c1d
+   * (fallback = pastel do spike; o color-mix deriva de qualquer accent). */
+  --yz-accent-ink: #6ee7c8;
+  --yz-accent-ink: color-mix(in srgb, var(--yz-accent) 40%, #ffffff);
   --yz-mist: #2b2b2d;
   --yz-bg: #121212;
   --yz-card: var(--ion-card-background);

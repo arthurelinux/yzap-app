@@ -552,7 +552,7 @@ onUnmounted(() => {
 }
 .fu-drop ion-icon {
   font-size: 1.7rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
 .fu-drop-title {
   margin: 6px 0 0;
@@ -569,7 +569,7 @@ onUnmounted(() => {
   margin: 4px 0 0;
 }
 .fu-drop.dragging {
-  border-color: var(--yz-primary);
+  border-color: var(--yz-accent);
   border-style: solid;
   background: var(--yz-mint);
 }
@@ -578,7 +578,7 @@ onUnmounted(() => {
   cursor: default;
 }
 .fu-drop:focus-visible {
-  outline: 2px solid var(--yz-primary);
+  outline: 2px solid var(--yz-accent);
   outline-offset: 2px;
 }
 .hidden-input {
@@ -610,7 +610,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
 .fu-pdf-link ion-icon {
   font-size: 1.4rem;
@@ -652,7 +652,7 @@ onUnmounted(() => {
 }
 .fu-pdf ion-icon {
   font-size: 1.6rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
 .fu-cell-actions {
   display: flex;

@@ -418,8 +418,8 @@ onMounted(load)
   position: absolute;
   top: 4px;
   left: 4px;
-  background: rgba(8, 127, 111, 0.92);
-  color: #fff;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 99px;

@@ -291,10 +291,10 @@ function applyLink() {
 .rte-btn.active {
   background: var(--ion-color-primary);
   border-color: var(--ion-color-primary);
-  color: #fff;
+  color: var(--ion-color-primary-contrast);
 }
 .rte-btn:focus-visible {
-  outline: 2px solid var(--yz-primary);
+  outline: 2px solid var(--yz-accent);
   outline-offset: 1px;
 }
 .rte-btn:disabled {
@@ -351,7 +351,7 @@ function applyLink() {
   margin: 0.4em 0;
 }
 .rte-area :deep(.tiptap a) {
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   text-decoration: underline;
 }
 .rte-area :deep(.tiptap p) {

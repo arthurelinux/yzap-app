@@ -345,7 +345,7 @@ onMounted(() => {
 <style scoped>
 .upgrade .big {
   font-size: 3rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   margin-top: 12px;
 }
 .warn-line,
@@ -416,6 +416,7 @@ onMounted(() => {
   border-radius: 50%;
   border: 2px dashed var(--ion-color-primary);
   background: rgba(8, 127, 111, 0.1);
+  background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;

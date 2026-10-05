@@ -72,6 +72,7 @@ import {
 import { Browser } from '@capacitor/browser'
 import { useSessionStore } from '@/stores/session'
 import { useShopStore } from '@/stores/shop'
+import { useStoreTheme } from '@/composables/useStoreTheme'
 
 interface MenuEntry {
   label: string
@@ -86,6 +87,10 @@ interface MenuSection {
 
 const session = useSessionStore()
 const shop = useShopStore()
+
+/** Tema global da loja (accent_color reativo em todo o app — fonte única). */
+useStoreTheme()
+
 const router = useRouter()
 const route = useRoute()
 

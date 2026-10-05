@@ -305,7 +305,7 @@ onMounted(() => {
   width: 26px;
   height: 10px;
   border-radius: 5px;
-  background: var(--yz-primary);
+  background: var(--yz-accent);
 }
 .tp-bar span {
   flex: 1;
@@ -317,7 +317,7 @@ onMounted(() => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--yz-primary);
+  background: var(--yz-accent);
 }
 .tp-hero {
   margin: 8px 0;
@@ -332,7 +332,7 @@ onMounted(() => {
   width: 34px;
   height: 26px;
   border-radius: 6px;
-  background: var(--yz-primary);
+  background: var(--yz-accent);
 }
 .tp-products i {
   flex: 1;
@@ -368,7 +368,7 @@ onMounted(() => {
   margin: 4px 0 0;
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
 .hint code {
   font-size: 0.78rem;

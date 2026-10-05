@@ -53,19 +53,19 @@ ion-split-pane {
   white-space: nowrap;
 }
 .menu-item.active {
-  background: #dcf8ef;
-  color: #087f6f;
-  border-color: #0ea071;
+  background: var(--yz-mint);
+  color: var(--yz-accent-ink);
+  border-color: var(--yz-accent);
 }
 .menu-item.active ion-icon {
-  color: #087f6f;
+  color: var(--yz-accent-ink);
 }
 .avatar-a {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #dcf8ef;
-  color: #087f6f;
+  background: var(--yz-mint);
+  color: var(--yz-accent-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,13 +336,13 @@ ion-card {
 }
 .price {
   font-weight: 800;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
-/* Links de texto (nunca `ion-button`): verde da marca no claro. */
+/* Links de texto (nunca `ion-button`): cor da loja no claro. */
 ion-card a:not(.button),
 ion-content p a:not(.button),
 .rich-text a {
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
 }
 .yz-chips {
   display: flex;
@@ -430,13 +430,13 @@ ion-content p a:not(.button),
   margin-top: 2px;
 }
 .rich-text a {
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   text-decoration: underline;
 }
 .rich-text blockquote {
   margin: 0.6em 0;
   padding: 6px 12px;
-  border-left: 3px solid var(--yz-primary);
+  border-left: 3px solid var(--yz-accent);
   color: var(--yz-muted);
 }
 .rich-text strong,
@@ -532,12 +532,12 @@ html.ion-palette-dark .menu-item ion-icon {
   color: #94a3b8;
 }
 html.ion-palette-dark .menu-item.active {
-  background: rgba(8, 127, 111, 0.22);
-  color: #6ee7c8;
-  border-color: rgba(14, 160, 113, 0.5);
+  background: var(--yz-mint);
+  color: var(--yz-accent-ink);
+  border-color: var(--yz-accent);
 }
 html.ion-palette-dark .menu-item.active ion-icon {
-  color: #6ee7c8;
+  color: var(--yz-accent-ink);
 }
 html.ion-palette-dark .menu-sec {
   color: #64748b;
@@ -570,7 +570,7 @@ html.ion-palette-dark .stat-label {
   color: #9aa3b2;
 }
 html.ion-palette-dark .avatar-a {
-  color: #6ee7c8;
+  color: var(--yz-accent-ink);
 }
 html.ion-palette-dark .icon-chip.chip-blue {
   background: rgba(37, 99, 235, 0.18);
@@ -604,14 +604,14 @@ html.ion-palette-dark ion-badge.yz-status-ready {
   color: #f9a8d4;
 }
 html.ion-palette-dark .price {
-  color: #5eead4;
+  color: var(--yz-accent-ink);
 }
 html.ion-palette-dark ion-card a:not(.button),
 html.ion-palette-dark ion-content p a:not(.button),
 html.ion-palette-dark .rich-text a,
 html.ion-palette-dark .fu-pdf-link {
-  color: #5eead4;
+  color: var(--yz-accent-ink);
 }
 html.ion-palette-dark .fu-pdf ion-icon {
-  color: #5eead4;
+  color: var(--yz-accent-ink);
 }

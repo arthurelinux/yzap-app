@@ -54,7 +54,7 @@ async function onLogout() {
 <style scoped>
 .big {
   font-size: 3rem;
-  color: var(--yz-primary);
+  color: var(--yz-accent-ink);
   margin-top: 32px;
 }
 .muted {

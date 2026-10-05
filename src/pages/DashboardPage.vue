@@ -350,7 +350,6 @@ async function goOrders() {
 async function reload() {
   try {
     await shop.load()
-    applyAccent()
     if (shop.planBlock) {
       await router.replace({
         name: 'plano-bloqueado',
@@ -368,12 +367,6 @@ async function reload() {
     if (await routeApiError(e, router)) return
     // erro de rede com cache cai em `stale`
   }
-}
-
-/** Respeita o accent_color da loja (contrato § identidade). */
-function applyAccent() {
-  document.documentElement.style.setProperty('--yz-accent', shop.accentColor)
-  document.documentElement.style.setProperty('--ion-color-primary', shop.accentColor)
 }
 
 async function onRefresh(event: CustomEvent) {
