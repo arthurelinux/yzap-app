@@ -57,6 +57,8 @@ export interface Order {
   items?: OrderItem[]
   total?: number
   delivery_fee?: number | null
+  /** Observação digitada pelo cliente na vitrine ou pelo lojista; null quando vazia. */
+  customer_notes?: string | null
   payment_method?: string | null
   payment_status?: string | null
   paid_at?: string | null
@@ -113,6 +115,7 @@ export const ordersApi = {
       customer_neighborhood?: string
       customer_city_name?: string
       customer_state_code?: string
+      customer_notes?: string
     },
     opts?: RequestOptions,
   ) {
@@ -132,15 +135,18 @@ export const ordersApi = {
     )
   },
 
-  /** PATCH /orders/{order}/items — mesmo cálculo/reserva do painel. */
+  /**
+   * PATCH /orders/{order}/items — mesmo cálculo/reserva do painel.
+   * `customer_notes` ausente mantém o valor atual (texto ≤1000).
+   */
   updateItems(
     id: number | string,
     items: Array<{ product_id: number; variant_id?: number | null; quantity: number }>,
-    opts?: RequestOptions,
+    opts?: RequestOptions & { customer_notes?: string },
   ) {
     return api.patch<{ data: Order }>(
       `/orders/${id}/items`,
-      { items },
+      opts?.customer_notes !== undefined ? { items, customer_notes: opts.customer_notes } : { items },
       { idempotencyKey: opts?.idempotencyKey ?? newIdempotencyKey() },
     )
   },

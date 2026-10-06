@@ -115,6 +115,19 @@
               <p v-if="err('customer_state_code')" class="err-text full">
                 {{ err('customer_state_code') }}
               </p>
+              <ion-item lines="full" class="yz-field full">
+                <ion-textarea
+                  v-model="form.customer_notes"
+                  label="Observação (opcional)"
+                  label-placement="floating"
+                  placeholder="Ex.: sem cebola, troco para R$ 100"
+                  :rows="2"
+                  auto-grow
+                  :maxlength="1000"
+                  :counter="true"
+                ></ion-textarea>
+              </ion-item>
+              <p v-if="err('customer_notes')" class="err-text full">{{ err('customer_notes') }}</p>
             </div>
 
             <p v-if="saveError" class="err-text">{{ saveError }}</p>
@@ -191,6 +204,22 @@
             </ion-list>
             <p v-else class="hint">Nenhum item ainda — adicione pelo catálogo acima.</p>
 
+            <!-- Observação: PATCH /orders/{id}/items aceita `customer_notes`
+              (ausente mantém); aqui o lojista vê/edita antes de revisar. -->
+            <ion-item lines="full" class="yz-field ion-margin-top">
+              <ion-textarea
+                v-model="form.customer_notes"
+                label="Observação do pedido"
+                label-placement="floating"
+                placeholder="Ex.: sem cebola, troco para R$ 100"
+                :rows="2"
+                auto-grow
+                :maxlength="1000"
+                :counter="true"
+              ></ion-textarea>
+            </ion-item>
+            <p v-if="err('customer_notes')" class="err-text">{{ err('customer_notes') }}</p>
+
             <p v-if="saveError" class="err-text">{{ saveError }}</p>
             <div class="yz-actions">
               <ion-button fill="outline" @click="step = 'cliente'">Voltar</ion-button>
@@ -223,6 +252,12 @@
               <ion-item>
                 <ion-label>Total do pedido</ion-label>
                 <ion-note slot="end" class="price">{{ money(review?.total ?? 0) }}</ion-note>
+              </ion-item>
+              <ion-item v-if="review?.customer_notes" lines="none">
+                <ion-label>
+                  <h3>Observação</h3>
+                  <p class="notes">{{ review.customer_notes }}</p>
+                </ion-label>
               </ion-item>
             </ion-list>
             <p v-if="saveError" class="err-text">{{ saveError }}</p>
@@ -268,6 +303,7 @@ import {
   IonSearchbar,
   IonSelect,
   IonSelectOption,
+  IonTextarea,
   IonToast,
 } from '@ionic/vue'
 import { ordersApi, type Order } from '@/api/orders'
@@ -302,6 +338,7 @@ const form = reactive({
   customer_neighborhood: '',
   customer_city_name: '',
   customer_state_code: '',
+  customer_notes: '',
 })
 
 const draft = ref<Order | null>(null)
@@ -369,6 +406,7 @@ async function createDraftOrder() {
       customer_neighborhood: opt(form.customer_neighborhood),
       customer_city_name: opt(form.customer_city_name),
       customer_state_code: opt(form.customer_state_code)?.toUpperCase(),
+      customer_notes: opt(form.customer_notes),
     })
     draft.value = data
     step.value = 'itens'
@@ -490,6 +528,8 @@ async function saveItems() {
         variant_id: it.variant_id,
         quantity: it.quantity,
       })),
+      // Observação vai junto (ausente manteria; aqui o lojista vê/edita).
+      { customer_notes: form.customer_notes.trim() },
     )
     review.value = data
     step.value = 'revisar'
@@ -604,6 +644,9 @@ async function openDraft() {
   font-size: 0.82rem;
   color: var(--yz-muted);
   margin: 8px 0;
+}
+.notes {
+  white-space: pre-wrap;
 }
 ion-searchbar {
   --box-shadow: none;

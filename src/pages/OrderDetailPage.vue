@@ -87,6 +87,12 @@
               </template>
             </ion-note>
           </ion-item>
+          <ion-item v-if="order.customer_notes">
+            <ion-label>
+              <h3>Observação</h3>
+              <p class="notes">{{ order.customer_notes }}</p>
+            </ion-label>
+          </ion-item>
           <ion-item lines="none">
             <ion-label>Pagamento</ion-label>
             <ion-note slot="end">
@@ -253,5 +259,8 @@ onMounted(load)
   margin-top: 10px;
   font-size: 12px;
   color: var(--yz-muted);
+}
+.notes {
+  white-space: pre-wrap;
 }
 </style>
