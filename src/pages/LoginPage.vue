@@ -49,6 +49,10 @@
         <ion-text v-if="accountBlocked" color="warning">
           <p class="error">Sua conta está inativa. Após entrar, você verá a tela de renovação.</p>
         </ion-text>
+
+        <p class="swap">
+          <router-link :to="{ name: 'cadastro' }">Criar conta</router-link>
+        </p>
       </div>
     </ion-content>
   </ion-page>
@@ -191,5 +195,14 @@ h1 {
 .error {
   text-align: center;
   margin-top: 14px;
+}
+.swap {
+  text-align: center;
+  margin-top: 18px;
+}
+.swap a {
+  color: var(--yz-accent-ink);
+  font-weight: 700;
+  text-decoration: none;
 }
 </style>

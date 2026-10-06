@@ -58,6 +58,31 @@ export const authApi = {
       ...devicePayload(),
     })
   },
+  /**
+   * Cadastro (contrato § Grupo 1: `POST /auth/register`).
+   * Senha mín. 8 (não 6 como o web). `referral_code` = `affiliate_code` do
+   * link `/indicar/{code}` — opcional, inexistente é ignorado sem 422.
+   * Conta criada já sai com trial ativo; 201 devolve o envelope de sessão
+   * (o app entra direto, mesmo fluxo do login).
+   */
+  register(payload: {
+    name: string
+    email: string
+    password: string
+    password_confirmation: string
+    referral_code?: string
+  }) {
+    const body: Record<string, string> = {
+      name: payload.name,
+      email: payload.email,
+      password: payload.password,
+      password_confirmation: payload.password_confirmation,
+      ...devicePayload(),
+    }
+    const code = payload.referral_code?.trim()
+    if (code) body.referral_code = code
+    return api.post<{ data: SessionEnvelope }>('/auth/register', body)
+  },
   me() {
     return api.get<MeResponse>('/me')
   },

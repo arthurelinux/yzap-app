@@ -159,7 +159,7 @@
       <ion-toast
         :is-open="toastOpen"
         :message="toastMessage"
-        :duration="1500"
+        :duration="toastDuration"
         position="top"
         @didDismiss="toastOpen = false"
       ></ion-toast>
@@ -169,7 +169,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   IonButton,
   IonCard,
@@ -200,9 +200,11 @@ import { routeApiError } from '@/composables/errors'
 const session = useSessionStore()
 const shop = useShopStore()
 const router = useRouter()
+const route = useRoute()
 
 const toastOpen = ref(false)
 const toastMessage = ref('Link copiado')
+const toastDuration = ref(1500)
 
 /** Contadores reais do catálogo (permisão `products`), igual ao spike. */
 const counts = reactive<{ categories: number | null; products: number | null }>({
@@ -404,6 +406,15 @@ async function goAffiliates() {
 }
 
 onMounted(async () => {
+  // Boas-vindas pós-cadastro (?boasvindas=N): a conta criada já vem com trial.
+  const rawDays = route.query.boasvindas
+  const days = Number(Array.isArray(rawDays) ? rawDays[0] : rawDays)
+  if (Number.isFinite(days) && days > 0) {
+    toastMessage.value = `Conta criada! Você tem ${days} dias de teste grátis. Boas-vindas! 🎉`
+    toastDuration.value = 4000
+    toastOpen.value = true
+    await router.replace({ name: 'inicio' })
+  }
   try {
     await session.refreshMe()
     if (!session.isActive) {

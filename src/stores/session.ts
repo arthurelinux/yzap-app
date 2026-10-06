@@ -54,6 +54,28 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  /** Cadastro (201 = envelope de sessão; entra direto, mesmo fluxo do login). */
+  async function register(input: {
+    name: string
+    email: string
+    password: string
+    password_confirmation: string
+    referral_code?: string
+  }) {
+    busy.value = true
+    lastError.value = null
+    try {
+      wireClient()
+      const { data } = await authApi.register(input)
+      applySession(data.access_token, data.user, data.account, data.abilities)
+      await saveToken(data.access_token)
+    } catch (e: unknown) {
+      lastError.value = e instanceof Error ? e.message : 'Falha no cadastro'
+      throw e
+    } finally {
+      busy.value = false
+    }
+  }
   /** id_token obtido via Google Sign-In nativo; verificação é SÓ no servidor. */
   async function loginWithGoogle(idToken: string) {
     busy.value = true
@@ -127,6 +149,7 @@ export const useSessionStore = defineStore('session', () => {
     isAdmin,
     login,
     loginWithGoogle,
+    register,
     hydrate,
     refreshMe,
     logout,

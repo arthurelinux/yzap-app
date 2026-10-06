@@ -17,6 +17,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'login',
     component: () => import('@/pages/LoginPage.vue'),
   },
+  {
+    path: '/cadastro',
+    name: 'cadastro',
+    component: () => import('@/pages/RegisterPage.vue'),
+  },
 
   /* ---------- Grupo 1 — sessão ---------- */
   {
@@ -236,8 +241,9 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !session.isAuthenticated) {
     return { name: 'login' }
   }
-  if (to.name === 'login' && session.isAuthenticated) {
-    return { name: 'inicio' }
+  if (to.name === 'login' || to.name === 'cadastro') {
+    if (session.isAuthenticated) return { name: 'inicio' }
+    return true
   }
   // Grupo 4: somente ability `mobile:admin` (contrato § admin).
   if (to.meta.admin && !session.isAdmin) {
