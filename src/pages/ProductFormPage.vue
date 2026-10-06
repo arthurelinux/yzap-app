@@ -67,6 +67,48 @@
             <ion-input v-model="form.code" placeholder="opcional" :maxlength="100"></ion-input>
             <p v-if="err('code')" class="err-text">{{ err('code') }}</p>
           </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Código de barras (GTIN)</ion-label>
+            <ion-input
+              v-model="form.gtin"
+              inputmode="numeric"
+              placeholder="8 a 14 dígitos"
+              :maxlength="14"
+            ></ion-input>
+            <p v-if="err('gtin')" class="err-text">{{ err('gtin') }}</p>
+          </ion-item>
+          <!-- Lookup GTIN (contrato § Grupo 6): exige rede, nunca trava o form. -->
+          <div class="gtin-block">
+            <ion-button
+              size="small"
+              fill="outline"
+              :disabled="lookupBusy"
+              @click="lookupBarcode"
+            >
+              <ion-spinner v-if="lookupBusy" name="crescent"></ion-spinner>
+              <ion-icon v-else slot="start" name="barcode-outline"></ion-icon>
+              {{ lookupBusy ? 'Buscando…' : 'Buscar dados do código' }}
+            </ion-button>
+            <p v-if="lookupError" class="err-text">{{ lookupError }}</p>
+            <p v-if="lookupFilled" class="ok-text">{{ lookupFilled }}</p>
+            <div v-if="lookup" class="gtin-result">
+              <img
+                v-if="lookupPhoto"
+                :src="lookupPhoto"
+                alt="Foto da base global"
+                loading="lazy"
+              />
+              <div class="gtin-info">
+                <strong>{{ lookup.name || 'Produto da base global' }}</strong>
+                <p v-if="lookup.brand">Marca: {{ lookup.brand }}</p>
+                <p v-if="lookup.quantity">Quantidade: {{ lookup.quantity }}</p>
+                <p v-if="lookupCategoriesText">Categoria: {{ lookupCategoriesText }}</p>
+                <p v-if="lookup.in_global_base" class="global-note">
+                  Imagem da base global — a sua foto (abaixo) sempre vence.
+                </p>
+              </div>
+            </div>
+          </div>
           <div class="desc-block">
             <RichTextEditor
               v-model="form.description"
@@ -150,8 +192,10 @@ import {
   productFormData,
   productJsonBody,
   type Category,
+  type GtinLookupResult,
   type Product,
 } from '@/api/products'
+import { ApiError } from '@/api/client'
 import { apiMessage, fieldErrors, routeApiError } from '@/composables/errors'
 import AppBar from '@/components/AppBar.vue'
 import PageHead from '@/components/PageHead.vue'
@@ -170,6 +214,7 @@ const form = reactive({
   price: '',
   category_id: null as number | null,
   code: '',
+  gtin: '',
   description: '',
   promotional_price: '',
   is_active: true,
@@ -207,6 +252,84 @@ function detailChecked(event: unknown): boolean {
   return Boolean(detail?.checked)
 }
 
+/* ---------- Lookup GTIN (GET /products/lookup?gtin=) ----------
+ * Só preenche campos ainda vazios (não apaga o que o lojista digitou).
+ * Marca/quantidade/categorias da base aparecem no cartão p/ conferência;
+ * a categoria do lookup é aplicada quando o nome bate com uma categoria
+ * da loja. Foto: a global é só referência — a própria (FileUploader)
+ * sempre vence no save. Exige rede, mas nunca trava o formulário. */
+const lookup = ref<GtinLookupResult | null>(null)
+const lookupBusy = ref(false)
+const lookupError = ref('')
+const lookupFilled = ref('')
+
+const lookupPhoto = computed(
+  () => lookup.value?.image_url || lookup.value?.global_image_url || null,
+)
+const lookupCategoriesText = computed(() => {
+  const raw = lookup.value?.categories
+  if (!raw) return ''
+  return Array.isArray(raw) ? raw.filter(Boolean).join(', ') : String(raw)
+})
+
+function applyLookup(data: GtinLookupResult) {
+  const filled: string[] = []
+  if (!form.name.trim() && data.name) {
+    form.name = data.name
+    filled.push('nome')
+  }
+  if (!form.category_id && data.categories && categories.value.length) {
+    const names = (Array.isArray(data.categories) ? data.categories : String(data.categories).split(','))
+      .map((c) => String(c).trim().toLowerCase())
+      .filter(Boolean)
+    const match = categories.value.find((c) => names.some((n) => c.name.toLowerCase() === n || c.name.toLowerCase().includes(n) || n.includes(c.name.toLowerCase())))
+    if (match) {
+      form.category_id = match.id
+      filled.push('categoria')
+    }
+  }
+  lookupFilled.value = filled.length
+    ? `Preenchemos: ${filled.join(' e ')} — confira antes de salvar.`
+    : 'Dados da base global acima — preencha o que faltar.'
+}
+
+async function lookupBarcode() {
+  lookupError.value = ''
+  lookupFilled.value = ''
+  const gtin = form.gtin.replace(/\D/g, '')
+  if (!/^\d{8,14}$/.test(gtin)) {
+    lookupError.value = 'Digite o código de barras com 8 a 14 dígitos para buscar.'
+    return
+  }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    lookupError.value = 'Sem conexão — a busca do código precisa de internet. O formulário continua liberado.'
+    return
+  }
+  lookupBusy.value = true
+  try {
+    const { data } = await catalogApi.lookupGtin(gtin)
+    if (!data?.found) {
+      lookup.value = null
+      lookupError.value = 'Código não encontrado na base global. Preencha os dados manualmente.'
+      return
+    }
+    lookup.value = data
+    applyLookup(data)
+  } catch (e: unknown) {
+    if (await routeApiError(e, router)) return
+    lookup.value = null
+    if (e instanceof ApiError && e.status === 404) {
+      lookupError.value = 'Código não encontrado na base global. Preencha os dados manualmente.'
+    } else if (e instanceof ApiError && e.status === 422) {
+      lookupError.value = apiMessage(e, 'Código de barras inválido (use 8 a 14 dígitos).')
+    } else {
+      lookupError.value = 'Não foi possível buscar agora — confira a conexão. O formulário continua liberado.'
+    }
+  } finally {
+    lookupBusy.value = false
+  }
+}
+
 async function loadCategories() {
   try {
     const { data } = await catalogApi.categories()
@@ -227,6 +350,7 @@ async function load() {
     form.price = String(data.price ?? '')
     form.category_id = data.category_id ?? null
     form.code = data.code ?? ''
+    form.gtin = data.gtin ?? ''
     form.description = data.description ?? ''
     form.promotional_price =
       data.promotional_price === null || data.promotional_price === undefined
@@ -308,5 +432,46 @@ onMounted(async () => {
 .desc-block {
   padding: 10px 16px 12px;
   border-top: 1px solid var(--ion-color-light, rgba(128, 128, 128, 0.2));
+}
+.gtin-block {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--ion-color-light, rgba(128, 128, 128, 0.2));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.ok-text {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-success, #2a7d4f);
+}
+.gtin-result {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  background: var(--yz-mint);
+  border-radius: 10px;
+  padding: 10px;
+}
+.gtin-result img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.gtin-info {
+  font-size: 0.82rem;
+  color: var(--ion-text-color);
+  min-width: 0;
+}
+.gtin-info p {
+  margin: 2px 0;
+  color: var(--yz-muted);
+}
+.global-note {
+  font-style: italic;
 }
 </style>

@@ -34,6 +34,8 @@ export interface Product {
   category_id?: number | null
   category_name?: string | null
   code?: string | null
+  /** Código de barras (GTIN 8–14 dígitos) ou null — sem unicidade por loja. */
+  gtin?: string | null
   name: string
   description?: string | null
   price: number | string
@@ -54,11 +56,30 @@ export interface ProductPayload {
   price?: string | number
   category_id?: number | null
   code?: string
+  gtin?: string | null
   description?: string
   promotional_price?: string | number
   is_active?: boolean
   stock?: number | null
   stock_min?: number | null
+}
+
+/**
+ * GET /products/lookup?gtin= — dados normalizados do Open Food Facts
+ * (contrato § Grupo 6). `in_global_base=true` quando a imagem já estava na
+ * nossa base (sem novo download); primeira resolução baixa a foto p/ o S3.
+ * `found=false` + 404 quando não existe nem na base nem no OFF.
+ */
+export interface GtinLookupResult {
+  gtin: string
+  found: boolean
+  in_global_base: boolean
+  name?: string | null
+  brand?: string | null
+  quantity?: string | null
+  categories?: string | string[] | null
+  image_url?: string | null
+  global_image_url?: string | null
 }
 
 export const catalogApi = {
@@ -94,6 +115,14 @@ export const catalogApi = {
 
   product(id: number | string) {
     return api.get<{ data: Product }>(`/products/${id}`)
+  },
+
+  /**
+   * GET /products/lookup?gtin= — registrado antes de `/products/{product}`
+   * no servidor para não colidir com o binding. `gtin`: 8–14 dígitos.
+   */
+  lookupGtin(gtin: string) {
+    return api.get<{ data: GtinLookupResult }>(`/products/lookup${qs({ gtin })}`)
   },
 
   /** POST multipart: name, price (texto BR ok), image? (4 MB) etc. */
@@ -161,6 +190,7 @@ export function productFormData(
     price: string
     category_id: number | null
     code: string
+    gtin: string
     description: string
     promotional_price: string
     is_active: boolean
@@ -174,6 +204,9 @@ export function productFormData(
   if (form.price !== '') fd.append('price', form.price)
   if (form.category_id) fd.append('category_id', String(form.category_id))
   if (form.code.trim()) fd.append('code', form.code.trim())
+  // Com gtin e sem foto própria, o servidor vincula a imagem global já
+  // baixada pelo lookup (sem HTTP no save); foto própria sempre vence.
+  if (form.gtin.trim()) fd.append('gtin', form.gtin.trim())
   if (form.description) fd.append('description', form.description)
   if (form.promotional_price !== '')
     fd.append('promotional_price', form.promotional_price)
@@ -191,6 +224,7 @@ export function productJsonBody(
     price: string
     category_id: number | null
     code: string
+    gtin: string
     description: string
     promotional_price: string
     is_active: boolean
@@ -205,6 +239,13 @@ export function productJsonBody(
   if ((original?.category_id ?? null) !== form.category_id && form.category_id)
     body.category_id = form.category_id
   if (form.code.trim() && form.code !== (original?.code ?? '')) body.code = form.code.trim()
+  // `gtin` ausente mantém valor + vínculo global (contrato); limpar o campo
+  // envia null para desvincular. Sem unicidade por loja.
+  if (form.gtin.trim()) {
+    if (form.gtin.trim() !== (original?.gtin ?? '')) body.gtin = form.gtin.trim()
+  } else if (original?.gtin) {
+    body.gtin = null
+  }
   if (form.description !== (original?.description ?? '')) body.description = form.description
   if (form.promotional_price !== String(original?.promotional_price ?? ''))
     body.promotional_price = form.promotional_price
